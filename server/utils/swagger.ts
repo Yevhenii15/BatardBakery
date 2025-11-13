@@ -75,6 +75,26 @@ export const swaggerSpec = swaggerJSDoc({
             updatedAt: { type: "string", format: "date-time", readOnly: true },
           },
         },
+        ContactInfo: {
+          type: "object",
+          required: ["email", "phone", "address"],
+          properties: {
+            email: { type: "string", example: "hello@batardbakery.dk" },
+            phone: { type: "string", example: "+45 29 25 03 80" },
+            openingHours: {
+              type: "string",
+              example: "Mon–Fri 08:00–17:00, Sat 09:00–13:00",
+            },
+            address: {
+              type: "string",
+              example: "Vejers Havvej 81B 6853 Vejers Strand",
+            },
+            logo: { type: "string", example: "/images/logo.svg" },
+            cvr: { type: "string", example: "43368532" },
+            createdAt: { type: "string", format: "date-time", readOnly: true },
+            updatedAt: { type: "string", format: "date-time", readOnly: true },
+          },
+        },
       },
       responses: {
         NotFound: { description: "Not found" },
