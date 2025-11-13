@@ -95,6 +95,34 @@ export const swaggerSpec = swaggerJSDoc({
             updatedAt: { type: "string", format: "date-time", readOnly: true },
           },
         },
+        ContactMessage: {
+          type: "object",
+          properties: {
+            _id: { type: "string", readOnly: true },
+            firstName: { type: "string", example: "Yevhenii" },
+            lastName: { type: "string", example: "Motov" },
+            email: { type: "string", example: "you@example.com" },
+            subject: { type: "string", example: "Order question" },
+            message: { type: "string", example: "Can I change pickup time?" },
+            closedAt: {
+              type: "string",
+              format: "date-time",
+              nullable: true,
+              readOnly: true,
+              description:
+                "Date when message was closed; automatically deleted 30 days after this",
+            },
+            status: {
+              type: "string",
+              enum: ["open", "closed"],
+              example: "open",
+            },
+
+            adminNote: { type: "string", readOnly: true },
+            createdAt: { type: "string", format: "date-time", readOnly: true },
+            updatedAt: { type: "string", format: "date-time", readOnly: true },
+          },
+        },
       },
       responses: {
         NotFound: { description: "Not found" },
