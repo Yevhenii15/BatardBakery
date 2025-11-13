@@ -33,6 +33,31 @@ export const swaggerSpec = swaggerJSDoc({
             updatedAt: { type: "string", format: "date-time", readOnly: true },
           },
         },
+        Admin: {
+          type: "object",
+          properties: {
+            _id: { type: "string", readOnly: true },
+            email: { type: "string", example: "admin@batard.dk" },
+            passwordHash: { type: "string", readOnly: true },
+            createdAt: { type: "string", format: "date-time", readOnly: true },
+            updatedAt: { type: "string", format: "date-time", readOnly: true },
+          },
+        },
+        LoginRequest: {
+          type: "object",
+          required: ["email", "password"],
+          properties: {
+            email: { type: "string", example: "admin@batard.dk" },
+            password: { type: "string", example: "StrongPass123" },
+          },
+        },
+        LoginResponse: {
+          type: "object",
+          properties: {
+            token: { type: "string" },
+            user: { $ref: "#/components/schemas/Admin" },
+          },
+        },
       },
       responses: {
         NotFound: { description: "Not found" },

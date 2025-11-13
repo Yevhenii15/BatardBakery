@@ -4,6 +4,7 @@
  *   put:
  *     summary: Create or update the single Hero Section
  *     tags: [Hero]
+ *     security: [{ bearerAuth: [] }]
  *     description: This endpoint upserts the only hero section in the system.
  *     requestBody:
  *       required: true
@@ -18,19 +19,24 @@
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/HeroSection'
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
  */
 
 import Hero from "../../models/HeroSection";
 import { HeroSectionInput } from "../../validation/HeroSection";
+import { requireAdmin } from "../../utils/auth"; // ← add this
 
 export default defineEventHandler(async (event) => {
+  // ensure admin is logged in (reads HttpOnly cookie or Bearer token)
+  requireAdmin(event);
+
   const body = await readBody(event);
   const input = HeroSectionInput.parse(body);
 
-  // Find the existing one or create new (upsert)
   const hero = await Hero.findOneAndUpdate({}, input, {
     new: true,
-    upsert: true, // create if not found
+    upsert: true,
   }).lean();
 
   return hero;
