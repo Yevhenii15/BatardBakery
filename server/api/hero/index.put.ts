@@ -25,10 +25,9 @@
 
 import Hero from "../../models/HeroSection";
 import { HeroSectionInput } from "../../validation/HeroSection";
-import { requireAdmin } from "../../utils/auth"; // ← add this
+import { requireAdmin } from "../../utils/auth";
 
 export default defineEventHandler(async (event) => {
-  // ensure admin is logged in (reads HttpOnly cookie or Bearer token)
   requireAdmin(event);
 
   const body = await readBody(event);
