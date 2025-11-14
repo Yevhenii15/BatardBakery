@@ -123,6 +123,37 @@ export const swaggerSpec = swaggerJSDoc({
             updatedAt: { type: "string", format: "date-time", readOnly: true },
           },
         },
+        Category: {
+          type: "object",
+          required: [
+            "categoryName",
+            "weekdayTime",
+            "weekendsTime",
+            "slotSizeMinutes",
+            "leadTimeMinutes",
+          ],
+          properties: {
+            categoryName: { type: "string", example: "Pizza" },
+            weekdayTime: {
+              type: "object",
+              properties: {
+                from: { type: "string", example: "12:00" },
+                to: { type: "string", example: "14:00" },
+              },
+            },
+            weekendsTime: {
+              type: "object",
+              properties: {
+                from: { type: "string", example: "12:00" },
+                to: { type: "string", example: "16:00" },
+              },
+            },
+            slotSizeMinutes: { type: "integer", example: 15 },
+            leadTimeMinutes: { type: "integer", example: 120 },
+            createdAt: { type: "string", format: "date-time", readOnly: true },
+            updatedAt: { type: "string", format: "date-time", readOnly: true },
+          },
+        },
       },
       responses: {
         NotFound: { description: "Not found" },
