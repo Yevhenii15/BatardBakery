@@ -178,6 +178,83 @@ export const swaggerSpec = swaggerJSDoc({
             updatedAt: { type: "string", format: "date-time", readOnly: true },
           },
         },
+        BookingItem: {
+          type: "object",
+          properties: {
+            productId: { type: "string" },
+            name: { type: "string" },
+            photo: { type: "string" },
+            quantity: { type: "integer" },
+            price: { type: "number" },
+            subtotalPrice: { type: "number" },
+          },
+        },
+        BookingCustomer: {
+          type: "object",
+          properties: {
+            firstName: { type: "string" },
+            lastName: { type: "string" },
+            phone: { type: "string" },
+            email: { type: "string" },
+          },
+        },
+        BookingPickup: {
+          type: "object",
+          properties: {
+            categoryId: { type: "string" },
+            categoryName: { type: "string" },
+            date: { type: "string", example: "2025-05-21" },
+            timeSlot: { type: "string", example: "16:30" },
+            orderNotes: { type: "string" },
+          },
+        },
+        Booking: {
+          type: "object",
+          properties: {
+            _id: { type: "string" },
+            bookingNumber: { type: "string" },
+            customer: { $ref: "#/components/schemas/BookingCustomer" },
+            pickup: { $ref: "#/components/schemas/BookingPickup" },
+            items: {
+              type: "array",
+              items: { $ref: "#/components/schemas/BookingItem" },
+            },
+            totalPrice: { type: "number" },
+            status: {
+              type: "string",
+              enum: ["pending", "confirmed", "cancelled", "completed"],
+            },
+            archived: { type: "boolean" },
+            archivedAt: { type: "string", format: "date-time", nullable: true },
+            createdAt: { type: "string", format: "date-time" },
+            updatedAt: { type: "string", format: "date-time" },
+          },
+        },
+        BookingCreateRequest: {
+          type: "object",
+          properties: {
+            bookingNumber: { type: "string" },
+            customer: { $ref: "#/components/schemas/BookingCustomer" },
+            pickup: {
+              type: "object",
+              properties: {
+                categoryId: { type: "string" },
+                date: { type: "string", example: "2025-05-21" },
+                timeSlot: { type: "string", example: "16:30" },
+                orderNotes: { type: "string" },
+              },
+            },
+            items: {
+              type: "array",
+              items: { $ref: "#/components/schemas/BookingItem" },
+            },
+            totalPrice: { type: "number" },
+            status: {
+              type: "string",
+              enum: ["pending", "confirmed", "cancelled", "completed"],
+            },
+          },
+        },
       },
       responses: {
         NotFound: { description: "Not found" },
