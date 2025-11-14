@@ -133,6 +133,7 @@ export const swaggerSpec = swaggerJSDoc({
             "leadTimeMinutes",
           ],
           properties: {
+            _id: { type: "string", readOnly: true },
             categoryName: { type: "string", example: "Pizza" },
             weekdayTime: {
               type: "object",
@@ -150,6 +151,29 @@ export const swaggerSpec = swaggerJSDoc({
             },
             slotSizeMinutes: { type: "integer", example: 15 },
             leadTimeMinutes: { type: "integer", example: 120 },
+            createdAt: { type: "string", format: "date-time", readOnly: true },
+            updatedAt: { type: "string", format: "date-time", readOnly: true },
+          },
+        },
+        Product: {
+          type: "object",
+          required: ["name", "price", "categoryId"],
+          properties: {
+            _id: { type: "string", readOnly: true },
+            name: { type: "string", example: "Sourdough Bread" },
+            description: {
+              type: "string",
+              example: "Classic 24h fermented sourdough.",
+            },
+            photo: {
+              type: "string",
+              example: "/images/products/sourdough.jpg",
+            },
+            price: { type: "number", example: 45 },
+            categoryId: { type: "string", example: "6735b3d210d6b9ca96e4a123" },
+            stock: { type: "integer", example: 60 },
+            dailyCapacity: { type: "integer", example: 8 },
+            active: { type: "boolean", example: true },
             createdAt: { type: "string", format: "date-time", readOnly: true },
             updatedAt: { type: "string", format: "date-time", readOnly: true },
           },
