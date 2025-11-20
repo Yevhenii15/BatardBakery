@@ -10,8 +10,8 @@ export async function connectDB() {
   try {
     await mongoose.connect(config.mongoUri);
     isConnected = true;
-    console.log("✅ MongoDB connected");
+    console.log("MongoDB connected");
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
+    console.error("MongoDB connection error:", err);
   }
 }

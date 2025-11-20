@@ -1,0 +1,62 @@
+// composables/useHero.ts
+import { ref } from "vue";
+import { useApiClient } from "./useApiClient";
+
+export interface HeroSection {
+  Title: string;
+  Subtitle: string;
+  ImagePrimary: string;
+  ImageSecondary: string;
+}
+
+const hero = ref<HeroSection | null>(null);
+const loading = ref(false);
+const error = ref<string | null>(null);
+
+export function useHero() {
+  const api = useApiClient();
+
+  const getHero = async () => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      // Public GET /api/hero
+      hero.value = await api<HeroSection>("/api/hero");
+    } catch (err: any) {
+      error.value = err?.statusMessage || "Failed to fetch hero section";
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const updateHero = async (data: HeroSection) => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      // Protected PUT /api/hero
+      hero.value = await api<HeroSection>("/api/hero", {
+        method: "PUT",
+        body: data,
+      });
+      return true;
+    } catch (err: any) {
+      error.value =
+        err?.data?.message ||
+        err?.statusMessage ||
+        "Failed to update hero section";
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  return {
+    hero,
+    loading,
+    error,
+    getHero,
+    updateHero,
+  };
+}
