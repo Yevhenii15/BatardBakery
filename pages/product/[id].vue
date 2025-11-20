@@ -8,6 +8,7 @@
   </svg>
     </button>
     
+    
 
     <div class="product-wrapper">
       <div class="info">
