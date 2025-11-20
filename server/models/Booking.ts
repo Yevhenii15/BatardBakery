@@ -29,6 +29,7 @@ const ItemSchema = new Schema(
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true, min: 0 },
     subtotalPrice: { type: Number, required: true, min: 0 },
+    pickupIndex: { type: Number, required: true },
   },
   { _id: false }
 );
@@ -38,7 +39,11 @@ const BookingSchema = new Schema(
     bookingNumber: { type: String, required: true, unique: true },
 
     customer: { type: CustomerSchema, required: true },
-    pickup: { type: PickupSchema, required: true },
+    pickups: {
+      type: [PickupSchema],
+      required: true,
+      validate: (v: any[]) => v.length > 0,
+    },
     items: { type: [ItemSchema], required: true },
 
     totalPrice: { type: Number, required: true, min: 0 },

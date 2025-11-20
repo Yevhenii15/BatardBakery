@@ -12,6 +12,7 @@ export interface BookingCustomer {
 export interface BookingItemInput {
   productId: string;
   quantity: number;
+  pickupIndex: number;
 }
 
 export interface BookingPickupInput {
@@ -23,7 +24,7 @@ export interface BookingPickupInput {
 
 export interface BookingCreateInput {
   customer: BookingCustomer;
-  pickup: BookingPickupInput;
+  pickups: BookingPickupInput[];
   items: BookingItemInput[];
 }
 
@@ -35,6 +36,7 @@ export interface BookingItem {
   quantity: number;
   price: number;
   subtotalPrice: number;
+  pickupIndex: number;
 }
 
 export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
@@ -43,13 +45,13 @@ export interface Booking {
   _id: string;
   bookingNumber: string;
   customer: BookingCustomer;
-  pickup: {
+  pickups: {
     categoryId: string;
     categoryName: string;
     date: string;
     timeSlot: string;
     orderNotes?: string;
-  };
+  }[];
   items: BookingItem[];
   totalPrice: number;
   status: BookingStatus;
