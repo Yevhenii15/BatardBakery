@@ -16,7 +16,8 @@ const emit = defineEmits<{
 
 const isEditMode = computed(() => !!props.modelValue);
 
-const form = reactive<ProductInput>({
+// helper for default form state
+const createEmptyForm = (): ProductInput => ({
   name: "",
   description: "",
   photo: "",
@@ -27,22 +28,24 @@ const form = reactive<ProductInput>({
   active: true,
 });
 
+const form = reactive<ProductInput>(createEmptyForm());
+
+// 🔁 helper to reset all fields
+const resetForm = () => {
+  Object.assign(form, createEmptyForm());
+};
+
 // sync modelValue -> form
 watch(
   () => props.modelValue,
   (val) => {
     if (!val) {
-      form.name = "";
-      form.description = "";
-      form.photo = "";
-      form.price = 0;
-      form.categoryId = "";
-      form.stock = 0;
-      form.dailyCapacity = 0;
-      form.active = true;
+      // when we leave edit mode, go back to empty create form
+      resetForm();
       return;
     }
 
+    // fill form from product when editing
     form.name = val.name;
     form.description = val.description;
     form.photo = val.photo;
@@ -57,9 +60,13 @@ watch(
 
 const onSubmit = () => {
   emit("submit", { ...form });
+  // 🔥 ALWAYS clear after submit (create or edit)
+  resetForm();
 };
 
 const onCancel = () => {
+  // also clear when cancelling
+  resetForm();
   emit("cancelEdit");
 };
 

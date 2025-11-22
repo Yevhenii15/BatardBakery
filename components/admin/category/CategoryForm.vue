@@ -17,25 +17,29 @@ const emit = defineEmits<{
 
 const isEditMode = computed(() => !!props.modelValue);
 
-// Form state
-const form = reactive<CategoryInput>({
+// Default empty state
+const emptyState = (): CategoryInput => ({
   categoryName: "",
-  weekdayTime: { from: "", to: "" } as TimeRange,
-  weekendsTime: { from: "", to: "" } as TimeRange,
+  weekdayTime: { from: "", to: "" },
+  weekendsTime: { from: "", to: "" },
   slotSizeMinutes: 5,
   leadTimeMinutes: 0,
 });
 
-// Sync edit values
+// Reactive form
+const form = reactive<CategoryInput>(emptyState());
+
+// Helper to reset form
+const resetForm = () => {
+  Object.assign(form, emptyState());
+};
+
+// Watch modelValue (edit mode)
 watch(
   () => props.modelValue,
   (val) => {
     if (!val) {
-      form.categoryName = "";
-      form.weekdayTime = { from: "", to: "" };
-      form.weekendsTime = { from: "", to: "" };
-      form.slotSizeMinutes = 5;
-      form.leadTimeMinutes = 0;
+      resetForm();
       return;
     }
 
@@ -48,8 +52,15 @@ watch(
   { immediate: true }
 );
 
-const onSubmit = () => emit("submit", { ...form });
-const onCancel = () => emit("cancelEdit");
+const onSubmit = () => {
+  emit("submit", { ...form });
+  resetForm(); // <<< 🔥 CLEAR AFTER SUBMIT
+};
+
+const onCancel = () => {
+  resetForm(); // <<< 🔥 CLEAR AFTER CANCEL
+  emit("cancelEdit");
+};
 </script>
 
 <template>

@@ -1,11 +1,17 @@
 <template>
   <!-- ===== BACK BUTTON ===== -->
- <button class="back-btn" @click="$router.push('/')">
-  <svg viewBox="0 0 24 24" class="arrow-icon">
-    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-</button>
-
+  <button class="back-btn" @click="$router.push('/')">
+    <svg viewBox="0 0 24 24" class="arrow-icon">
+      <path
+        d="M15 18l-6-6 6-6"
+        stroke="currentColor"
+        stroke-width="2"
+        fill="none"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </button>
 
   <!-- ===== PAGE HEADER (BESTIL) ===== -->
   <section class="order-header">
@@ -14,112 +20,93 @@
   </section>
 
   <section class="products">
-    
-    <!-- ===== BREAD SECTION ===== -->
-    <div class="category">
-      <h2 class="category-title">Brød</h2>
+    <!-- Loading / error -->
+    <div v-if="loading" class="text-center text-sm text-gray-600 mb-6">
+      Henter produkter…
+    </div>
+    <div v-if="error" class="text-center text-sm text-red-600 mb-6">
+      {{ error }}
+    </div>
 
-      <div class="product-grid">
-        <div v-for="item in bread" :key="item.id" class="product-card">
+    <!-- Dynamic categories from DB -->
+    <div
+      v-for="section in sections"
+      :key="section.category._id"
+      class="category"
+    >
+      <h2 class="category-title">
+        {{ section.category.categoryName }}
+      </h2>
+
+      <div v-if="section.items.length" class="product-grid">
+        <div v-for="item in section.items" :key="item._id" class="product-card">
           <div class="product-image">
-            <img :src="item.image" :alt="item.name" />
+            <img :src="item.photo || '/img/placeholder.jpg'" :alt="item.name" />
           </div>
 
           <h3 class="product-name">{{ item.name }}</h3>
 
-          <p class="product-price">
-            <span v-if="item.oldPrice" class="old">{{ item.oldPrice }} kr.</span>
-            <span>{{ item.price }} kr.</span>
-          </p>
+          <p class="product-price">{{ item.price.toFixed(2) }} kr.</p>
 
-          <NuxtLink class="product-btn" :to="`/product/${item.id}`">
-  Læs Mere
-</NuxtLink>
-
+          <NuxtLink class="product-btn" :to="`/product/${item._id}`">
+            Læs Mere
+          </NuxtLink>
         </div>
       </div>
+
+      <p v-else class="text-sm text-gray-500 ml-4 mb-8">
+        Ingen produkter i denne kategori endnu.
+      </p>
     </div>
-
-    <!-- ===== CAKES SECTION ===== -->
-    <div class="category">
-      <h2 class="category-title">Kager</h2>
-
-      <div class="product-grid">
-        <div v-for="item in cakes" :key="item.id" class="product-card">
-          <div class="product-image">
-            <img :src="item.image" :alt="item.name" />
-          </div>
-
-          <h3 class="product-name">{{ item.name }}</h3>
-          <p class="product-price">{{ item.price }} kr.</p>
-          <NuxtLink class="product-btn" :to="`/product/${item.id}`">
-  Læs Mere
-</NuxtLink>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== PIZZA SECTION ===== -->
-    <div class="category">
-      <h2 class="category-title">Pizza</h2>
-
-      <div class="product-grid">
-        <div v-for="item in pizzas" :key="item.id" class="product-card">
-          <div class="product-image">
-            <img :src="item.image" :alt="item.name" />
-          </div>
-
-          <h3 class="product-name">{{ item.name }}</h3>
-          <p class="product-price">{{ item.price }} kr.</p>
-          <NuxtLink class="product-btn" :to="`/product/${item.id}`">
-  Læs Mere
-</NuxtLink>
-
-        </div>
-      </div>
-    </div>
-
   </section>
 </template>
 
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import { useCategory } from "~/composables/useCategory";
+import { useProduct } from "~/composables/useProduct";
 
-<script setup>
-const bread = [
-  { id: 1, name: "4 Blandede Surdejsstykker", price: 40, oldPrice: 48, image: "/img/rundst.jpg" },
-  { id: 2, name: "Grov Birkes", price: 12, image: "/img/grov.jpg" },
-  { id: 3, name: "Bedstemorboller", price: 12, image: "/img/minib.jpg" },
-  { id: 4, name: "Bâtard Surdejsbrød", price: 44, image: "/img/breadBatard.jpg" },
-  { id: 8, name: "Bâtard Surdejsbrød", price: 44, image: "/img/breadBatard.jpg" },
-  { id: 6, name: "Grov Birkes", price: 12, image: "/img/grov.jpg" },
-  { id: 5, name: "4 Blandede Surdejsstykker", price: 40, oldPrice: 48, image: "/img/rundst.jpg" },
-  { id: 7, name: "Bedstemorboller", price: 12, image: "/img/minib.jpg" },
-]
+// load categories and products from API
+const {
+  categories,
+  loading: categoriesLoading,
+  error: categoriesError,
+  getCategories,
+} = useCategory();
 
+const {
+  products,
+  loading: productsLoading,
+  error: productsError,
+  getProducts,
+} = useProduct();
 
-const cakes = [
-    { id: 10, name: "KBH Birkes", price: 20, image: "/img/kbh.jpg" },
-    { id: 11, name: "Croissant", price: 22, image: "/img/smorcr.jpg" },
-    { id: 12, name: "Chokoladeboller", price: 25, image: "/img/choko.jpg" },
-    { id: 15, name: "Chokoladeboller", price: 25, image: "/img/choko.jpg" },
-    { id: 14, name: "Croissant", price: 22, image: "/img/smorcr.jpg" },
-    { id: 13, name: "KBH Birkes", price: 20, image: "/img/kbh.jpg" },
-    { id: 14, name: "Croissant", price: 22, image: "/img/smorcr.jpg" },
-    { id: 13, name: "KBH Birkes", price: 20, image: "/img/kbh.jpg" },
-    ]
+const loading = computed(
+  () => categoriesLoading.value || productsLoading.value
+);
 
-const pizzas = [
-  { id: 20, name: "Margherita", price: 89, image: "/img/4.jpeg" },
-  { id: 21, name: "Pepperoni", price: 95, image: "/img/3.jpeg" },
-  { id: 22, name: "Vegetar", price: 92, image: "/img/5.jpeg" },
-  { id: 25, name: "Margherita", price: 89, image: "/img/5.jpeg" },
-  { id: 24, name: "Pepperoni", price: 95, image: "/img/5.jpeg" },
-  { id: 22, name: "Vegetar", price: 92, image: "/img/3.jpeg" },
-]
+const error = computed(() => categoriesError.value || productsError.value);
+
+// computed: list of sections: { category, items[] }
+const sections = computed(() =>
+  categories.value
+    .map((cat) => ({
+      category: cat,
+      // only active products in this category
+      items: products.value.filter(
+        (p) => p.categoryId === cat._id && p.active !== false
+      ),
+    }))
+    // hide empty categories with no products
+    .filter((section) => section.items.length > 0)
+);
+
+onMounted(async () => {
+  await Promise.all([getCategories(), getProducts()]);
+});
 </script>
 
 <style scoped>
-
 /* ===== BACK BUTTON ===== */
 .back-btn {
   position: fixed;
@@ -134,7 +121,7 @@ const pizzas = [
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 999;
   transition: 0.25s ease;
 }
@@ -151,7 +138,6 @@ const pizzas = [
   color: white;
 }
 
-
 /* ===== ORDER PAGE HEADER ===== */
 .order-header {
   width: 100%;
@@ -164,7 +150,7 @@ const pizzas = [
 .order-title {
   font-size: 5rem;
   letter-spacing: 4px;
-  color: #6f7d75;             /* same green/grey as Batard */
+  color: #6f7d75; /* same green/grey as Batard */
   font-weight: 700;
   margin: 0;
   font-family: "Tungsten", "Arial Narrow", sans-serif;
@@ -176,7 +162,6 @@ const pizzas = [
   margin-top: 1rem;
   font-weight: 600;
 }
-
 
 /* Page Wrapper */
 .products {
@@ -194,12 +179,29 @@ const pizzas = [
   letter-spacing: 2px;
 }
 
-/* Product Grid */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 2.5rem;
   padding: 1rem;
+  grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 600px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .product-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 /* Card */
@@ -208,7 +210,7 @@ const pizzas = [
   padding: 1.5rem;
   border-radius: 12px;
   text-align: center;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
 
 /* Placeholder image box */
@@ -227,11 +229,6 @@ const pizzas = [
   display: block;
 }
 
-.product-image p {
-  font-size: 1.3rem;
-  opacity: 0.7;
-}
-
 /* Product name */
 .product-name {
   margin-top: 1rem;
@@ -247,12 +244,6 @@ const pizzas = [
   color: #333;
 }
 
-.product-price .old {
-  text-decoration: line-through;
-  margin-right: 0.5rem;
-  opacity: 0.6;
-}
-
 /* Button */
 .product-btn {
   background: #6f7d75;
@@ -263,11 +254,12 @@ const pizzas = [
   border-radius: 6px;
   cursor: pointer;
   transition: 0.25s ease;
+  display: inline-block;
+  text-decoration: none;
 }
 
 .product-btn:hover {
   background: #4f5c55;
   transform: scale(1.05);
 }
-
 </style>

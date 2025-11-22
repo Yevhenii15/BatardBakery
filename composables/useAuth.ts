@@ -10,6 +10,7 @@ export interface AdminUser {
 const adminUser = ref<AdminUser | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
+const hasCheckedAuth = ref(false); // optional flag if you want to know when initial check is done
 
 export function useAuth() {
   const api = useApiClient();
@@ -33,7 +34,6 @@ export function useAuth() {
       adminUser.value = res.user;
       return true;
     } catch (err: any) {
-      // try to read backend error message if present
       const msg =
         err?.data?.message ||
         err?.statusMessage ||
@@ -65,14 +65,37 @@ export function useAuth() {
     }
   };
 
+  const checkAuth = async () => {
+    // avoid spamming /api/auth/me if already checked in this session
+    if (hasCheckedAuth.value && adminUser.value) return;
+
+    loading.value = true;
+    error.value = null;
+
+    try {
+      // you need an /api/auth/me route that reads the cookie on server
+      const res = await api<{ user: AdminUser | null }>("/api/auth/me");
+      adminUser.value = res.user;
+    } catch (err: any) {
+      // if token invalid/expired, just treat as logged out
+      adminUser.value = null;
+    } finally {
+      loading.value = false;
+      hasCheckedAuth.value = true;
+    }
+  };
+
   return {
     // state
     adminUser,
     isLoggedIn,
     loading,
     error,
+    hasCheckedAuth,
+
     // actions
     login,
     logout,
+    checkAuth,
   };
 }

@@ -1,98 +1,133 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { useProduct } from "~/composables/useProduct";
-import { useCategory } from "~/composables/useCategory";
-import ProductForm from "~/components/admin/product/ProductForm.vue";
-import ProductTable from "~/components/admin/product/ProductTable.vue";
+import { ref, onMounted } from "vue";
+import {
+  useProduct,
+  type Product,
+  type ProductInput,
+} from "~/composables/useProduct";
+import { useCategory, type Category } from "~/composables/useCategory";
 
-// Optional admin auth middleware
-// definePageMeta({
-//   middleware: "admin",
-// });
+import AdminProductForm from "~/components/admin/product/ProductForm.vue";
+import AdminProductTable from "~/components/admin/product/ProductTable.vue";
 
+// composables
 const {
   products,
-  product,
-  loading,
-  error,
+  loading: productsLoading,
+  error: productsError,
   getProducts,
   createProduct,
   updateProduct,
   deleteProduct,
 } = useProduct();
 
-const { categories, getCategories } = useCategory();
+const {
+  categories,
+  loading: categoriesLoading,
+  error: categoriesError,
+  getCategories,
+} = useCategory();
 
-const editingProductId = ref<string | null>(null);
+// which product is being edited (null = create mode)
+const editingProduct = ref<Product | null>(null);
 
-const handleSubmit = async (payload: any) => {
-  if (editingProductId.value) {
-    const ok = await updateProduct(editingProductId.value, payload);
-    if (ok) {
-      editingProductId.value = null;
-      product.value = null;
-    }
-  } else {
-    await createProduct(payload);
-  }
-};
+const loading = computed(
+  () => productsLoading.value || categoriesLoading.value
+);
 
-const handleEdit = (p: any) => {
-  editingProductId.value = p._id;
-  product.value = p;
-};
+const error = computed(() => productsError.value || categoriesError.value);
 
-const handleCancelEdit = () => {
-  editingProductId.value = null;
-  product.value = null;
-};
-
-const handleDelete = async (id: string) => {
-  if (!confirm("Are you sure you want to delete this product?")) return;
-  await deleteProduct(id);
-};
-
+// load initial data
 onMounted(async () => {
   await Promise.all([getCategories(), getProducts()]);
 });
+
+// when form is submitted
+const handleSubmit = async (payload: ProductInput) => {
+  if (editingProduct.value) {
+    // UPDATE
+    const ok = await updateProduct(editingProduct.value._id, payload);
+    if (!ok) return;
+  } else {
+    // CREATE
+    const ok = await createProduct(payload);
+    if (!ok) return;
+  }
+
+  editingProduct.value = null;
+
+  // refresh list
+  await getProducts();
+};
+
+// when clicking "Edit" in table
+const handleEdit = (product: Product) => {
+  editingProduct.value = product;
+};
+
+// when clicking "Delete" in table
+const handleDelete = async (id: string) => {
+  if (!confirm("Are you sure you want to delete this product?")) return;
+
+  const ok = await deleteProduct(id);
+  if (!ok) return;
+
+  await getProducts();
+
+  // if we deleted the product currently being edited, reset the form
+  if (editingProduct.value?._id === id) {
+    editingProduct.value = null;
+  }
+};
+
+// cancel editing, clear form
+const handleCancelEdit = () => {
+  editingProduct.value = null;
+};
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <main class="max-w-6xl mx-auto px-4 py-10 space-y-8">
-      <header class="space-y-2">
-        <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
-          Product management
-        </h1>
-        <p class="text-sm text-gray-600 max-w-2xl">
-          Manage all products that can be ordered online. Each product is linked
-          to a category which controls its pickup logic.
+  <div class="space-y-8">
+    <!-- Header -->
+    <header class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold">Products</h1>
+        <p class="text-sm text-gray-500 mt-1">
+          Manage all products, their categories, images, prices and stock.
         </p>
-      </header>
-
-      <div
-        v-if="error"
-        class="border border-gray-300 bg-white rounded-lg px-4 py-3 text-sm text-gray-800"
-      >
-        {{ error }}
       </div>
 
-      <div class="grid grid-cols-1 gap-6">
-        <ProductForm
-          :model-value="product"
-          :categories="categories"
+      <div v-if="loading" class="text-xs text-gray-500">Loading…</div>
+    </header>
+
+    <!-- Error -->
+    <p v-if="error" class="text-sm text-red-600">
+      {{ error }}
+    </p>
+
+    <!-- Layout: form + table -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <!-- Form -->
+      <div class="xl:col-span-1">
+        <AdminProductForm
+          :key="editingProduct ? editingProduct._id : 'new'"
+          :modelValue="editingProduct"
+          :categories="categories as Category[]"
           @submit="handleSubmit"
           @cancelEdit="handleCancelEdit"
         />
+      </div>
 
-        <ProductTable
+      <!-- Table -->
+      <div class="xl:col-span-2">
+        <AdminProductTable
           :products="products"
           :categories="categories"
-          :loading="loading"
+          :loading="productsLoading"
           @edit="handleEdit"
           @delete="handleDelete"
         />
       </div>
-    </main>
+    </div>
   </div>
 </template>
