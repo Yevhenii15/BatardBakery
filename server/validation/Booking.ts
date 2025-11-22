@@ -2,28 +2,36 @@ import { z } from "zod";
 
 const objectIdRegex = /^[0-9a-fA-F]{24}$/;
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+const timeRegex = /^\d{2}:\d{2}$/;
 
 export const BookingCreateInput = z.object({
   customer: z.object({
-    firstName: z.string().min(3),
-    lastName: z.string().min(3),
-    phone: z.string().min(8),
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+    phone: z.string().min(1),
     email: z.string().email(),
   }),
-  pickup: z.object({
-    categoryId: z.string().regex(objectIdRegex, "Invalid categoryId"),
-    date: z.string().regex(dateRegex, "Invalid date format (YYYY-MM-DD)"),
-    timeSlot: z.string(),
-    orderNotes: z.string().optional().default(""),
-  }),
+
+  pickups: z
+    .array(
+      z.object({
+        categoryId: z.string().regex(objectIdRegex, "Invalid categoryId"),
+        date: z.string().regex(dateRegex, "Invalid date format (YYYY-MM-DD)"),
+        timeSlot: z.string().regex(timeRegex, "Invalid time format (HH:mm)"),
+        orderNotes: z.string().optional(),
+      })
+    )
+    .min(1, "At least one pickup required"),
+
   items: z
     .array(
       z.object({
         productId: z.string().regex(objectIdRegex, "Invalid productId"),
         quantity: z.number().int().positive(),
+        pickupIndex: z.number().int().min(0),
       })
     )
-    .min(1),
+    .min(1, "At least one item required"),
 });
 
 export const BookingUpdateInput = z.object({

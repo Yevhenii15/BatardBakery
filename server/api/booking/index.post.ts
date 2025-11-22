@@ -13,13 +13,10 @@
  *     responses:
  *       201:
  *         description: Created booking
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Booking'
  *       400:
- *         description: Invalid data (missing category or product)
+ *         description: Invalid data
  */
+
 import Booking from "../../models/Booking";
 import Category from "../../models/Category";
 import Product from "../../models/Product";
@@ -30,25 +27,33 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const input = BookingCreateInput.parse(body);
 
-  // 1) Check category exists
-  const category = await Category.findById(input.pickup.categoryId).lean();
-  if (!category) {
+  // 1) Load all categories used in pickups
+  const categoryIds = [...new Set(input.pickups.map((p) => p.categoryId))];
+  const categories = await Category.find({ _id: { $in: categoryIds } }).lean();
+
+  if (categories.length !== categoryIds.length) {
     setResponseStatus(event, 400);
-    return { message: "Category does not exist" };
+    return { message: "One or more categories do not exist" };
   }
 
-  // 2) Load products
-  const productIds = input.items.map((i) => i.productId);
+  const categoryMap = new Map(categories.map((c) => [String(c._id), c]));
+
+  // 2) Load all products used in items
+  const productIds = [...new Set(input.items.map((i) => i.productId))];
   const products = await Product.find({ _id: { $in: productIds } }).lean();
+
   if (products.length !== productIds.length) {
     setResponseStatus(event, 400);
     return { message: "One or more products do not exist" };
   }
 
-  // 3) Build items array with snapshot of product data
+  const productMap = new Map(products.map((p) => [String(p._id), p]));
+
+  // 3) Build items with product snapshot + pickupIndex
   const items = input.items.map((i) => {
-    const p = products.find((prod) => String(prod._id) === i.productId)!;
+    const p = productMap.get(i.productId)!;
     const subtotal = p.price * i.quantity;
+
     return {
       productId: p._id,
       name: p.name,
@@ -56,21 +61,30 @@ export default defineEventHandler(async (event) => {
       quantity: i.quantity,
       price: p.price,
       subtotalPrice: subtotal,
+      pickupIndex: i.pickupIndex,
     };
   });
 
-  const totalPrice = items.reduce((sum, item) => sum + item.subtotalPrice, 0);
+  const totalPrice = items.reduce((sum, i) => sum + i.subtotalPrice, 0);
 
+  // 4) Build pickups array with categoryName
+  const pickups = input.pickups.map((p) => {
+    const cat = categoryMap.get(p.categoryId)!;
+
+    return {
+      categoryId: cat._id,
+      categoryName: cat.categoryName,
+      date: p.date,
+      timeSlot: p.timeSlot,
+      orderNotes: p.orderNotes ?? "",
+    };
+  });
+
+  // 5) Create booking in DB
   const booking = await Booking.create({
     bookingNumber: generateBookingNumber(),
     customer: input.customer,
-    pickup: {
-      categoryId: category._id,
-      categoryName: category.categoryName,
-      date: input.pickup.date,
-      timeSlot: input.pickup.timeSlot,
-      orderNotes: input.pickup.orderNotes ?? "",
-    },
+    pickups,
     items,
     totalPrice,
     status: "pending",

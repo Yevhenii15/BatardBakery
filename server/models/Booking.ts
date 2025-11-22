@@ -60,7 +60,7 @@ const BookingSchema = new Schema(
   { timestamps: true }
 );
 
-BookingSchema.index({ "pickup.date": 1 });
+BookingSchema.index({ "pickups.date": 1 });
 BookingSchema.index({ archived: 1 });
 
 export type BookingDoc = mongoose.InferSchemaType<typeof BookingSchema> & {
