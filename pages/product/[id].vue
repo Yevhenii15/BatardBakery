@@ -86,7 +86,7 @@ const handleAddToCart = () => {
 <style scoped>
 .back-btn {
   position: fixed;
-  top: 100px; /* 👈 moved down */
+  top: 100px;
   left: 25px;
   width: 48px;
   height: 48px;
