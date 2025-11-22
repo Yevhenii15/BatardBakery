@@ -1,17 +1,22 @@
-<script setup lang="ts">
-// no interactivity for now — simple static navbar
+<script setup>
+import { useCartPanel } from "~/composables/useCartPanel";
+const { open } = useCartPanel();
 </script>
 
 <template>
   <nav class="navbar">
     <div class="navbar-container">
-      <!-- Logo -->
-      <div class="navbar-logo">
-          <img src="/img/logo.png" alt="Batard Bakery Logo" class="navbar-logo-img" />
-      </div>
+      <!-- Logo (clickable -> home) -->
+      <NuxtLink to="/" class="navbar-logo" aria-label="Go to homepage">
+        <img
+          src="/img/logo.png"
+          alt="Batard Bakery Logo"
+          class="navbar-logo-img"
+        />
+      </NuxtLink>
 
       <!-- Cart icon -->
-      <button class="cart-btn" aria-label="Cart">
+      <button class="cart-btn" @click="open" aria-label="Open cart">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -24,7 +29,9 @@
         >
           <circle cx="9" cy="21" r="1" />
           <circle cx="20" cy="21" r="1" />
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+          <path
+            d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+          />
         </svg>
       </button>
     </div>
@@ -32,8 +39,6 @@
 </template>
 
 <style scoped>
-
-
 /* ====== Navbar Container ====== */
 .navbar {
   position: fixed;
@@ -54,14 +59,9 @@
 }
 
 /* ====== Logo ====== */
-.logo-placeholder {
-  width: 160px;
-  height: 50px;
-  background-color: transparent;
-  font-weight: bold;
-  font-size: 1rem;
-  letter-spacing: 1px;
+.navbar-logo {
   display: flex;
+  align-items: center;
 }
 
 .navbar-logo-img {
@@ -97,11 +97,11 @@
   .navbar-container {
     padding: 0.75rem 1.5rem;
   }
-  .logo-placeholder {
-    width: 120px;
+
+  .navbar-logo-img {
     height: 40px;
-    font-size: 0.9rem;
   }
+
   .cart-icon {
     width: 20px;
     height: 20px;

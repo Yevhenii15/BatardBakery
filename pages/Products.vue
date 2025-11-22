@@ -1,63 +1,83 @@
 <template>
-  <!-- ===== BACK BUTTON ===== -->
-  <button class="back-btn" @click="$router.push('/')">
-    <svg viewBox="0 0 24 24" class="arrow-icon">
-      <path
-        d="M15 18l-6-6 6-6"
-        stroke="currentColor"
-        stroke-width="2"
-        fill="none"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </svg>
-  </button>
+  <Navbar />
+  <section class="order-of-products">
+    <!-- ===== BACK BUTTON ===== -->
+    <button class="back-btn" @click="$router.push('/')">
+      <svg viewBox="0 0 24 24" class="arrow-icon">
+        <path
+          d="M15 18l-6-6 6-6"
+          stroke="currentColor"
+          stroke-width="2"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
 
-  <!-- ===== PAGE HEADER (BESTIL) ===== -->
-  <section class="order-header">
-    <h1 class="order-title">BESTIL</h1>
-    <p class="order-subtitle">Slip for køen – Afhent direkte i butikken</p>
-  </section>
+    <!-- ===== PAGE HEADER ===== -->
+    <section class="order-header">
+      <h1 class="order-title">ORDER</h1>
+      <p class="order-subtitle">Skip the line – pick up in the bakery</p>
+    </section>
 
-  <section class="products">
-    <!-- Loading / error -->
-    <div v-if="loading" class="text-center text-sm text-gray-600 mb-6">
-      Henter produkter…
-    </div>
-    <div v-if="error" class="text-center text-sm text-red-600 mb-6">
-      {{ error }}
-    </div>
-
-    <!-- Dynamic categories from DB -->
-    <div
-      v-for="section in sections"
-      :key="section.category._id"
-      class="category"
-    >
-      <h2 class="category-title">
-        {{ section.category.categoryName }}
-      </h2>
-
-      <div v-if="section.items.length" class="product-grid">
-        <div v-for="item in section.items" :key="item._id" class="product-card">
-          <div class="product-image">
-            <img :src="item.photo || '/img/placeholder.jpg'" :alt="item.name" />
-          </div>
-
-          <h3 class="product-name">{{ item.name }}</h3>
-
-          <p class="product-price">{{ item.price.toFixed(2) }} kr.</p>
-
-          <NuxtLink class="product-btn" :to="`/product/${item._id}`">
-            Læs Mere
-          </NuxtLink>
-        </div>
+    <section class="products">
+      <!-- Loading / error -->
+      <div v-if="loading" class="text-center text-sm text-gray-600 mb-6">
+        Loading products…
+      </div>
+      <div v-if="error" class="text-center text-sm text-red-600 mb-6">
+        {{ error }}
       </div>
 
-      <p v-else class="text-sm text-gray-500 ml-4 mb-8">
-        Ingen produkter i denne kategori endnu.
-      </p>
-    </div>
+      <!-- Dynamic categories from DB -->
+      <div
+        v-for="section in sections"
+        :key="section.category._id"
+        class="category"
+      >
+        <h2 class="category-title">
+          {{ section.category.categoryName }}
+        </h2>
+
+        <div v-if="section.items.length" class="product-grid">
+          <div
+            v-for="item in section.items"
+            :key="item._id"
+            class="product-card"
+          >
+            <div class="product-image">
+              <img
+                :src="item.photo || '/img/placeholder.jpg'"
+                :alt="item.name"
+              />
+            </div>
+
+            <h3 class="product-name">{{ item.name }}</h3>
+
+            <p class="product-price">{{ item.price.toFixed(2) }} DKK</p>
+
+            <div class="product-actions">
+              <NuxtLink class="product-btn" :to="`/product/${item._id}`">
+                View details
+              </NuxtLink>
+
+              <button
+                type="button"
+                class="product-btn"
+                @click="handleAddToCart(item)"
+              >
+                Add to cart
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <p v-else class="text-sm text-gray-500 ml-4 mb-8">
+          No products in this category yet.
+        </p>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -65,8 +85,9 @@
 import { computed, onMounted } from "vue";
 import { useCategory } from "~/composables/useCategory";
 import { useProduct } from "~/composables/useProduct";
+import { useCart } from "~/composables/useCart";
+import Navbar from "~/components/NavbarView.vue";
 
-// load categories and products from API
 const {
   categories,
   loading: categoriesLoading,
@@ -81,40 +102,47 @@ const {
   getProducts,
 } = useProduct();
 
+const { addItem } = useCart();
+
 const loading = computed(
   () => categoriesLoading.value || productsLoading.value
 );
 
 const error = computed(() => categoriesError.value || productsError.value);
 
-// computed: list of sections: { category, items[] }
 const sections = computed(() =>
   categories.value
     .map((cat) => ({
       category: cat,
-      // only active products in this category
       items: products.value.filter(
         (p) => p.categoryId === cat._id && p.active !== false
       ),
     }))
-    // hide empty categories with no products
     .filter((section) => section.items.length > 0)
 );
 
 onMounted(async () => {
   await Promise.all([getCategories(), getProducts()]);
 });
+
+const handleAddToCart = (product: any) => {
+  addItem(product, 1);
+};
 </script>
 
 <style scoped>
+.order-of-products {
+  position: relative;
+  top: 80px;
+}
 /* ===== BACK BUTTON ===== */
 .back-btn {
   position: fixed;
-  top: 25px;
+  top: 100px; /* below navbar (which is ~70–80px high) */
   left: 25px;
   width: 48px;
   height: 48px;
-  background: #6f7d75; /* Batard green/grey */
+  background: #6f7d75;
   border: none;
   border-radius: 50%;
   display: flex;
@@ -122,7 +150,7 @@ onMounted(async () => {
   align-items: center;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 999;
+  z-index: 1100; /* higher than navbar’s 1000 */
   transition: 0.25s ease;
 }
 
@@ -140,7 +168,6 @@ onMounted(async () => {
 
 /* ===== ORDER PAGE HEADER ===== */
 .order-header {
-  width: 100%;
   text-align: center;
   background: #f4f4f4;
   padding: 3rem 2rem 2rem;
@@ -244,7 +271,13 @@ onMounted(async () => {
   color: #333;
 }
 
-/* Button */
+.product-actions {
+  display: flex;
+  gap: 12px; /* space between buttons */
+  justify-content: center;
+  margin-top: 12px;
+}
+
 .product-btn {
   background: #6f7d75;
   color: white;
@@ -254,8 +287,10 @@ onMounted(async () => {
   border-radius: 6px;
   cursor: pointer;
   transition: 0.25s ease;
-  display: inline-block;
   text-decoration: none;
+  display: inline-flex; /* important! */
+  align-items: center;
+  justify-content: center;
 }
 
 .product-btn:hover {
