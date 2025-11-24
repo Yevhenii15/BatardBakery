@@ -114,17 +114,39 @@ export function useBooking() {
   // Admin: get booking by id
   const getBookingById = async (id: string) => {
     loading.value = true;
-    error.value = null;
+    booking.value = null;
 
     try {
-      booking.value = await api<Booking>(`/api/booking/${id}`);
-    } catch (err: any) {
-      error.value = err?.statusMessage || "Failed to fetch booking";
+      const data = await api<Booking>(`/api/booking/${id}`, { method: "GET" });
+      booking.value = data;
+      return data;
+    } catch (err) {
+      booking.value = null;
+      return null;
     } finally {
       loading.value = false;
     }
   };
+  const getBookingByNumber = async (bookingNumber: string) => {
+    loading.value = true;
+    error.value = null;
+    booking.value = null;
 
+    try {
+      const data = await api<Booking>(`/api/booking/number/${bookingNumber}`, {
+        method: "GET",
+      });
+      booking.value = data;
+      return data;
+    } catch (err: any) {
+      error.value =
+        err?.data?.message || err?.statusMessage || "Failed to load booking";
+      booking.value = null;
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  };
   // Admin: update booking (status / archived)
   const updateBooking = async (id: string, payload: BookingUpdatePayload) => {
     loading.value = true;
@@ -178,6 +200,7 @@ export function useBooking() {
     createBooking,
     getBookings,
     getBookingById,
+    getBookingByNumber,
     updateBooking,
     deleteBooking,
   };
