@@ -1,26 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
 
 const router = useRouter();
-const { login, loading, error, isLoggedIn } = useAuth();
+const { login, loading, error } = useAuth();
 
 const form = ref({
   email: "",
   password: "",
 });
 
-// 🚀 Redirect if already logged in
-onMounted(() => {
-  if (isLoggedIn.value) {
-    router.push("/admin");
-  }
-});
-
 const onSubmit = async () => {
   const success = await login(form.value.email, form.value.password);
-  if (success) router.push("/admin");
+  if (success) {
+    router.push("/admin"); // only after clicking login
+  }
 };
 </script>
 

@@ -1,9 +1,10 @@
 import { useAuth } from "~/composables/useAuth";
 
-export default defineNuxtRouteMiddleware((to) => {
-  const { isLoggedIn } = useAuth();
+export default defineNuxtRouteMiddleware(async (to) => {
+  const { isLoggedIn, checkAuth } = useAuth();
 
-  // Only protect /admin/** routes — but allow /admin/login
+  await checkAuth();
+
   if (to.path.startsWith("/admin") && to.path !== "/admin/login") {
     if (!isLoggedIn.value) {
       return "/admin/login";

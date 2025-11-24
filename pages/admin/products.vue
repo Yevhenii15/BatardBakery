@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed, nextTick } from "vue";
 import {
   useProduct,
   type Product,
@@ -28,8 +28,10 @@ const {
   getCategories,
 } = useCategory();
 
-// which product is being edited (null = create mode)
 const editingProduct = ref<Product | null>(null);
+
+// 🔹 ref to the form container (for scroll on Edit)
+const formSection = ref<HTMLElement | null>(null);
 
 const loading = computed(
   () => productsLoading.value || categoriesLoading.value
@@ -37,7 +39,34 @@ const loading = computed(
 
 const error = computed(() => productsError.value || categoriesError.value);
 
-// load initial data
+// 🔹 scroll helper: scroll to the form (top) when clicking Edit
+const scrollToForm = () => {
+  nextTick(() => {
+    if (!formSection.value) return;
+
+    const rect = formSection.value.getBoundingClientRect();
+    const offsetTop = rect.top + window.scrollY - 80; // adjust for navbar height
+
+    window.scrollTo({
+      top: offsetTop,
+      behavior: "smooth",
+    });
+  });
+};
+
+// 🔹 scroll helper: scroll to a product card after create/update
+const scrollToProduct = (id: string) => {
+  nextTick(() => {
+    const el = document.getElementById(`product-${id}`);
+    if (el) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  });
+};
+
 onMounted(async () => {
   await Promise.all([getCategories(), getProducts()]);
 });
@@ -46,26 +75,44 @@ onMounted(async () => {
 const handleSubmit = async (payload: ProductInput) => {
   if (editingProduct.value) {
     // UPDATE
-    const ok = await updateProduct(editingProduct.value._id, payload);
+    const id = editingProduct.value._id;
+    const ok = await updateProduct(id, payload);
     if (!ok) return;
+
+    // update list locally
+    products.value = products.value.map((p) =>
+      p._id === id ? { ...p, ...payload, _id: id } : p
+    );
+
+    editingProduct.value = null;
+
+    // scroll to updated product
+    scrollToProduct(id);
   } else {
     // CREATE
     const ok = await createProduct(payload);
     if (!ok) return;
+
+    await getProducts();
+
+    // find last product in that category
+    const lastInCategory = [...products.value]
+      .reverse()
+      .find((p) => p.categoryId === payload.categoryId);
+
+    if (lastInCategory?._id) {
+      scrollToProduct(lastInCategory._id);
+    }
   }
-
-  editingProduct.value = null;
-
-  // refresh list
-  await getProducts();
 };
 
-// when clicking "Edit" in table
+// when clicking "Edit" in cards
 const handleEdit = (product: Product) => {
   editingProduct.value = product;
+  scrollToForm(); // 🔥 scroll up to the form again
 };
 
-// when clicking "Delete" in table
+// when clicking "Delete"
 const handleDelete = async (id: string) => {
   if (!confirm("Are you sure you want to delete this product?")) return;
 
@@ -74,13 +121,11 @@ const handleDelete = async (id: string) => {
 
   await getProducts();
 
-  // if we deleted the product currently being edited, reset the form
   if (editingProduct.value?._id === id) {
     editingProduct.value = null;
   }
 };
 
-// cancel editing, clear form
 const handleCancelEdit = () => {
   editingProduct.value = null;
 };
@@ -107,8 +152,8 @@ const handleCancelEdit = () => {
 
     <!-- Layout: form + table -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-      <!-- Form -->
-      <div class="xl:col-span-1">
+      <!-- 🔹 Form -->
+      <div class="xl:col-span-1" ref="formSection">
         <AdminProductForm
           :key="editingProduct ? editingProduct._id : 'new'"
           :modelValue="editingProduct"
