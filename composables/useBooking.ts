@@ -85,6 +85,7 @@ export function useBooking() {
         body: data,
       });
       booking.value = created;
+      alert("Booking created successfully!");
       return created;
     } catch (err: any) {
       error.value =

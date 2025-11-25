@@ -1,28 +1,24 @@
-// server/api/auth/me.get.ts
-import { getCookie, deleteCookie } from "h3";
 import { verifyAdminJWT } from "../../utils/jwt";
 
 export default defineEventHandler((event) => {
   const token = getCookie(event, "batard_token");
-
-  // no token -> just "not logged in", but 200
   if (!token) {
+    setResponseStatus(event, 401);
     return { user: null };
   }
 
   try {
     const payload = verifyAdminJWT(token);
 
-    // 👇 match AdminUser: { _id, email }
     return {
       user: {
-        _id: payload.sub,
+        _id: payload.sub, // 🔥 MUST MATCH login route
         email: payload.email,
       },
     };
   } catch {
-    // invalid / expired token -> clear cookie and treat as logged out
-    deleteCookie(event, "batard_token", { path: "/" });
+    deleteCookie(event, "batard_token");
+    setResponseStatus(event, 401);
     return { user: null };
   }
 });

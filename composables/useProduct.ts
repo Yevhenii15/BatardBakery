@@ -61,6 +61,7 @@ export function useProduct() {
       });
 
       products.value.push(created);
+      alert("Product created successfully");
       return true;
     } catch (err: any) {
       error.value =
@@ -85,6 +86,7 @@ export function useProduct() {
       if (index !== -1) products.value[index] = updated;
 
       product.value = updated;
+      alert("Product updated successfully");
       return true;
     } catch (err: any) {
       error.value =
@@ -95,13 +97,14 @@ export function useProduct() {
     }
   };
 
+  // composables/useProduct.ts
   const deleteProduct = async (id: string) => {
     loading.value = true;
     error.value = null;
 
     try {
       await api(`/api/product/${id}`, { method: "DELETE" });
-      products.value = products.value.filter((p) => p._id !== id);
+      // ✅ Only return true; don't touch products here
       return true;
     } catch (err: any) {
       error.value =

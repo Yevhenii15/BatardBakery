@@ -113,14 +113,17 @@ const handleEdit = (product: Product) => {
 };
 
 // when clicking "Delete"
+// when clicking "Delete"
 const handleDelete = async (id: string) => {
   if (!confirm("Are you sure you want to delete this product?")) return;
 
   const ok = await deleteProduct(id);
   if (!ok) return;
 
-  await getProducts();
+  // ✅ Remove from local list so the card disappears immediately
+  products.value = products.value.filter((p) => p._id !== id);
 
+  // Clear edit form if we were editing this one
   if (editingProduct.value?._id === id) {
     editingProduct.value = null;
   }

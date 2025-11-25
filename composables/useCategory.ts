@@ -62,6 +62,7 @@ export function useCategory() {
         body: data,
       });
       categories.value.push(created);
+      alert("Category created successfully.");
       return true;
     } catch (err: any) {
       error.value =
@@ -86,7 +87,7 @@ export function useCategory() {
       const index = categories.value.findIndex((c) => c._id === id);
       if (index !== -1) categories.value[index] = updated;
       category.value = updated;
-
+      alert("Category updated successfully.");
       return true;
     } catch (err: any) {
       error.value =

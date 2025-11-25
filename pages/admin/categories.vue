@@ -4,11 +4,6 @@ import { useCategory } from "~/composables/useCategory";
 import CategoryForm from "../../components/admin/category/CategoryForm.vue";
 import CategoryTable from "../../components/admin/category/CategoryTable.vue";
 
-// Optional: protect this page with middleware
-// definePageMeta({
-//   middleware: "admin", // custom middleware to check auth
-// });
-
 const {
   categories,
   category,
@@ -24,19 +19,25 @@ const editingCategoryId = ref<string | null>(null);
 
 const handleSubmit = async (payload: any) => {
   if (editingCategoryId.value) {
+    // ✅ EDIT MODE
     const ok = await updateCategory(editingCategoryId.value, payload);
     if (ok) {
       editingCategoryId.value = null;
+      category.value = null; // << very important, clears form model
     }
   } else {
-    await createCategory(payload);
+    // ✅ CREATE MODE
+    const ok = await createCategory(payload);
+    if (ok) {
+      category.value = null; // stays in create mode, but ensure clean
+    }
   }
 };
 
 const handleEdit = (cat: any) => {
   editingCategoryId.value = cat._id;
-  // bind to form via v-model: category
-  category.value = cat;
+  // clone so we don't mutate table row directly
+  category.value = { ...cat };
 };
 
 const handleCancelEdit = () => {
@@ -53,7 +54,6 @@ onMounted(async () => {
   await getCategories();
 });
 </script>
-
 <template>
   <div class="max-w-5xl mx-auto py-10 space-y-8">
     <h1 class="text-3xl font-bold">Category Management</h1>

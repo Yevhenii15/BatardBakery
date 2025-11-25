@@ -78,6 +78,7 @@ export function useCart() {
     }
 
     saveToStorage();
+    alert(`${product.name} has been added to the cart.`);
   };
 
   const setQuantity = (productId: string, quantity: number) => {

@@ -58,17 +58,68 @@
             <p class="product-price">{{ item.price.toFixed(2) }} DKK</p>
 
             <div class="product-actions">
-              <NuxtLink class="product-btn" :to="`/product/${item._id}`">
-                View details
-              </NuxtLink>
+              <!-- If this card is NOT currently selecting a quantity -->
+              <template v-if="activeQtyProductId !== item._id">
+                <NuxtLink class="product-btn" :to="`/product/${item._id}`">
+                  View details
+                </NuxtLink>
 
-              <button
-                type="button"
-                class="product-btn"
-                @click="handleAddToCart(item)"
-              >
-                Add to cart
-              </button>
+                <button
+                  type="button"
+                  class="product-btn"
+                  :disabled="remainingForProduct(item) <= 0"
+                  @click="openQtySelector(item)"
+                >
+                  {{
+                    remainingForProduct(item) <= 0 ? "Sold out" : "Add to cart"
+                  }}
+                </button>
+              </template>
+
+              <!-- Quantity selector shown AFTER clicking Add to cart -->
+              <template v-else>
+                <div class="qty-wrapper">
+                  <button
+                    type="button"
+                    class="qty-btn"
+                    @click="qty > 1 && (qty = qty - 1)"
+                  >
+                    −
+                  </button>
+
+                  <input
+                    v-model.number="qty"
+                    type="number"
+                    class="qty-input"
+                    :min="1"
+                    :max="remainingForProduct(item)"
+                  />
+
+                  <button
+                    type="button"
+                    class="qty-btn"
+                    @click="qty < remainingForProduct(item) && (qty = qty + 1)"
+                  >
+                    +
+                  </button>
+
+                  <button
+                    type="button"
+                    class="product-btn confirm-btn"
+                    @click="confirmAddToCart(item)"
+                  >
+                    Add {{ qty }} pcs
+                  </button>
+
+                  <button
+                    type="button"
+                    class="cancel-link"
+                    @click="activeQtyProductId = null"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -82,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useCategory } from "~/composables/useCategory";
 import { useProduct } from "~/composables/useProduct";
 import { useCart } from "~/composables/useCart";
@@ -110,6 +161,7 @@ const loading = computed(
 
 const error = computed(() => categoriesError.value || productsError.value);
 
+// 🔹 Sections: categories + their active products
 const sections = computed(() =>
   categories.value
     .map((cat) => ({
@@ -121,13 +173,60 @@ const sections = computed(() =>
     .filter((section) => section.items.length > 0)
 );
 
+// =======================
+//  Quantity selector state
+// =======================
+const activeQtyProductId = ref<string | null>(null);
+const qty = ref(1);
+
+// 🔹 How many pieces user already added (only tracked on this page)
+const addedQtyByProduct = ref<Record<string, number>>({});
+
+// Base max per order from product data only
+const maxPerOrder = (p: any) => {
+  const cap = typeof p.dailyCapacity === "number" ? p.dailyCapacity : Infinity;
+  const stock = typeof p.stock === "number" ? p.stock : Infinity;
+  const max = Math.min(cap, stock);
+  return max === Infinity ? 99 : max;
+};
+
+// Remaining pieces user can still add for this product on this page
+const remainingForProduct = (p: any) => {
+  const baseMax = maxPerOrder(p);
+  const used = addedQtyByProduct.value[p._id] ?? 0;
+  const remaining = baseMax - used;
+  return remaining > 0 ? remaining : 0;
+};
+
+// when clicking "Add to cart"
+const openQtySelector = (product: any) => {
+  const remaining = remainingForProduct(product);
+  if (remaining <= 0) return; // fully used for now
+
+  activeQtyProductId.value = product._id;
+  qty.value = 1;
+};
+
+const confirmAddToCart = (product: any) => {
+  const remaining = remainingForProduct(product);
+  if (remaining <= 0) return;
+
+  if (qty.value > remaining) qty.value = remaining;
+  if (qty.value <= 0) return;
+
+  addItem(product, qty.value);
+
+  // 🔹 remember how many pieces we already added for this product
+  const id = product._id;
+  const prev = addedQtyByProduct.value[id] ?? 0;
+  addedQtyByProduct.value[id] = prev + qty.value;
+
+  activeQtyProductId.value = null; // hide selector
+};
+
 onMounted(async () => {
   await Promise.all([getCategories(), getProducts()]);
 });
-
-const handleAddToCart = (product: any) => {
-  addItem(product, 1);
-};
 </script>
 
 <style scoped>
@@ -296,5 +395,48 @@ const handleAddToCart = (product: any) => {
 .product-btn:hover {
   background: #4f5c55;
   transform: scale(1.05);
+}
+.qty-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.qty-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #6f7d75;
+  background: #fff;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-input {
+  width: 60px;
+  text-align: center;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  padding: 4px 6px;
+}
+
+.confirm-btn {
+  padding-inline: 1.2rem;
+}
+
+.cancel-link {
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-decoration: underline;
+  cursor: pointer;
 }
 </style>
