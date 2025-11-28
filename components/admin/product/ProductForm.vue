@@ -16,7 +16,6 @@ const emit = defineEmits<{
 
 const isEditMode = computed(() => !!props.modelValue);
 
-// helper for default form state
 const createEmptyForm = (): ProductInput => ({
   name: "",
   description: "",
@@ -29,38 +28,20 @@ const createEmptyForm = (): ProductInput => ({
 });
 
 const form = reactive<ProductInput>(createEmptyForm());
-
-// 💾 local selected file (not uploaded yet)
 const selectedFile = ref<File | null>(null);
-// 👀 preview URL (for new file or existing photo)
 const previewUrl = ref<string | null>(null);
 
-// reset form
 const resetForm = () => {
   Object.assign(form, createEmptyForm());
   selectedFile.value = null;
   previewUrl.value = null;
 };
 
-// sync modelValue -> form
 watch(
   () => props.modelValue,
   (val) => {
-    if (!val) {
-      resetForm();
-      return;
-    }
-
-    form.name = val.name;
-    form.description = val.description;
-    form.photo = val.photo;
-    form.price = val.price;
-    form.categoryId = val.categoryId;
-    form.stock = val.stock;
-    form.dailyCapacity = val.dailyCapacity;
-    form.active = val.active;
-
-    // show existing photo as preview when editing
+    if (!val) return resetForm();
+    Object.assign(form, val);
     previewUrl.value = val.photo || null;
     selectedFile.value = null;
   },
@@ -69,32 +50,23 @@ watch(
 
 const api = useApiClient();
 
-// 🧁 Submit: first upload file (if any), then emit product payload
 const onSubmit = async () => {
   const payload: ProductInput = { ...form };
 
-  // if user selected a new file, upload it now
   if (selectedFile.value) {
     const formData = new FormData();
     formData.append("file", selectedFile.value);
-
-    // if editing and there was an old image, tell backend so it can delete it
-    if (form.photo) {
-      formData.append("oldUrl", form.photo);
-    }
+    if (form.photo) formData.append("oldUrl", form.photo);
 
     try {
       const res = await api<{ url: string }>("/api/upload", {
         method: "POST",
         body: formData,
       });
-
-      // use uploaded URL for this product
       payload.photo = res.url;
     } catch (err) {
-      console.error("Upload failed", err);
-      alert("Failed to upload image. Product was not saved.");
-      return; // ❌ stop here – don't create/update product
+      alert("Failed to upload image.");
+      return;
     }
   }
 
@@ -107,545 +79,227 @@ const onCancel = () => {
   emit("cancelEdit");
 };
 
-// 📁 Only keep file locally + generate preview (no upload here)
 const onFileChange = (e: Event) => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0];
   if (!file) return;
-
   selectedFile.value = file;
-
-  // new preview from chosen file
   previewUrl.value = URL.createObjectURL(file);
 };
 </script>
 
 <template>
-  <section class="product-form-card">
-    <!-- Header -->
-    <header class="pf-header">
-      <div>
-        <h2 class="pf-title">
-          {{ isEditMode ? "Edit product" : "Create new product" }}
-        </h2>
-        <p class="pf-subtitle">
-          Configure product details, category, image and stock information.
-        </p>
-      </div>
-    </header>
+  <div class="form-container">
+    <h2 class="form-title">{{ isEditMode ? "Edit Product" : "Create Product" }}</h2>
 
-    <form @submit.prevent="onSubmit" class="pf-form">
-      <!-- Name + Category -->
-      <div class="pf-grid pf-grid-2">
-        <div class="pf-field">
-          <label class="pf-label">Name</label>
-          <input
-            v-model="form.name"
-            type="text"
-            class="pf-input"
-            placeholder="e.g. Batard, Pizza #2"
-            required
-          />
-        </div>
+    <form class="form-inner" @submit.prevent="onSubmit">
+      
+      <!-- Name -->
+      <label>Product Name</label>
+      <input v-model="form.name" type="text" required />
 
-        <div class="pf-field">
-          <label class="pf-label">Category</label>
-          <select v-model="form.categoryId" class="pf-input" required>
-            <option value="" disabled>Select category</option>
-            <option v-for="cat in categories" :key="cat._id" :value="cat._id">
-              {{ cat.categoryName }}
-            </option>
-          </select>
-          <p class="pf-help">
-            Pickup time rules will follow the selected category.
-          </p>
-        </div>
-      </div>
+      <!-- Category -->
+      <label>Category</label>
+      <select v-model="form.categoryId" required>
+        <option disabled value="">Select a category</option>
+        <option v-for="cat in categories" :key="cat._id" :value="cat._id">
+          {{ cat.categoryName }}
+        </option>
+      </select>
 
       <!-- Description -->
-      <div class="pf-field">
-        <label class="pf-label">Description</label>
-        <textarea
-          v-model="form.description"
-          rows="3"
-          class="pf-input pf-textarea"
-          placeholder="Short description shown to customers"
-        />
-      </div>
+      <label>Description</label>
+      <textarea v-model="form.description" rows="3" placeholder="Product description" />
 
-      <!-- Photo + Price -->
-      <div class="pf-grid pf-grid-2">
-        <!-- Image upload -->
-        <div class="pf-field">
-          <label class="pf-label">Product image</label>
+      <!-- Image + Price -->
+      <div class="row-2">
+        <div class="column">
+          <label>Product Image</label>
+          <input type="file" accept="image/*" @change="onFileChange" />
 
-          <div class="pf-upload">
-            <div class="pf-upload-main">
-              <input
-                type="file"
-                accept="image/*"
-                class="pf-file"
-                @change="onFileChange"
-              />
-              <p class="pf-help">Upload a JPG/PNG image (max 5MB).</p>
-            </div>
-
-            <!-- ✅ Preview priority: new file previewUrl > existing photo > "No image" -->
-            <div v-if="previewUrl" class="pf-thumb">
-              <img :src="previewUrl" alt="Preview" />
-            </div>
-            <div v-else-if="form.photo" class="pf-thumb">
-              <img :src="form.photo" alt="Preview" />
-            </div>
-            <div v-else class="pf-thumb pf-thumb-empty">No image</div>
+          <div class="image-preview">
+            <img v-if="previewUrl" :src="previewUrl" alt="Preview" />
+            <img v-else-if="form.photo" :src="form.photo" alt="Preview" />
+            <div v-else class="no-image">No image</div>
           </div>
         </div>
 
-        <!-- Price -->
-        <div class="pf-field">
-          <label class="pf-label">Price (DKK)</label>
-          <input
-            v-model.number="form.price"
-            type="number"
-            min="0"
-            step="0.5"
-            class="pf-input"
-            required
-          />
+        <div class="column">
+          <label>Price (DKK)</label>
+          <input v-model.number="form.price" type="number" min="0" step="0.5" required />
         </div>
       </div>
 
-      <!-- Stock / daily capacity / active -->
-      <div class="pf-grid pf-grid-3">
-        <div class="pf-field">
-          <label class="pf-label">Stock</label>
-          <input
-            v-model.number="form.stock"
-            type="number"
-            min="0"
-            class="pf-input"
-            required
-          />
-          <p class="pf-help">Current available pieces in store.</p>
+      <!-- Stock + Daily Capacity -->
+      <div class="row-2">
+        <div class="column">
+          <label>Stock</label>
+          <input v-model.number="form.stock" type="number" min="0" required />
         </div>
 
-        <div class="pf-field">
-          <label class="pf-label">Daily capacity</label>
-          <input
-            v-model.number="form.dailyCapacity"
-            type="number"
-            min="0"
-            class="pf-input"
-            required
-          />
-          <p class="pf-help">Maximum pieces baked per day.</p>
+        <div class="column">
+          <label>Daily Capacity</label>
+          <input v-model.number="form.dailyCapacity" type="number" min="0" required />
         </div>
+      </div>
 
-        <div class="pf-field pf-checkbox-wrap">
-          <label class="pf-checkbox-label">
-            <input v-model="form.active" type="checkbox" class="pf-checkbox" />
-            Active (visible to customers)
-          </label>
-        </div>
+      <!-- Active -->
+      <div class="checkbox-wrap">
+        <label>
+          <input type="checkbox" v-model="form.active" />
+          Active (visible to customers)
+        </label>
       </div>
 
       <!-- Actions -->
-      <div class="pf-actions">
-        <button
-          v-if="isEditMode"
-          type="button"
-          class="pf-btn pf-btn-ghost"
-          @click="onCancel"
-        >
-          Cancel
-        </button>
-
-        <button type="submit" class="pf-btn pf-btn-primary">
-          {{ isEditMode ? "Save changes" : "Create product" }}
+      <div class="actions">
+        <button v-if="isEditMode" type="button" class="btn-cancel" @click="onCancel">Cancel</button>
+        <button type="submit" class="btn-submit">
+          {{ isEditMode ? "Save Changes" : "Create Product" }}
         </button>
       </div>
     </form>
-  </section>
+  </div>
 </template>
 
 <style scoped>
-.product-form-card {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  padding: 1.25rem 1.5rem;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+.form-container {
+  margin: 20px auto; /* center */
+  background: #5d7261;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.4);
+  color: white;
 }
 
-/* Header */
-.pf-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-.pf-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #111827;
-}
-.pf-subtitle {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.1rem;
+/* Title */
+.form-title {
+  font-family: Georgia, serif;
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 1.4rem;
+  text-align: center; /* nicer layout */
 }
 
-/* Form */
-.pf-form {
+/* Layout */
+.form-inner {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 16px;
 }
 
-/* Grids */
-.pf-grid {
-  display: grid;
-  gap: 0.9rem;
-}
-.pf-grid-2 {
-  grid-template-columns: 1fr;
-}
-.pf-grid-3 {
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 768px) {
-  .pf-grid-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .pf-grid-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* Fields */
-.pf-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-.pf-label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #374151;
+/* Labels */
+label {
+  color: #e8e8e8;
+  font-size: 15px;
+  margin-bottom: 4px;
 }
 
 /* Inputs */
-.pf-input {
-  border-radius: 7px;
-  border: 1px solid #d1d5db;
-  padding: 0.4rem 0.65rem;
-  font-size: 0.85rem;
+input,
+select,
+textarea {
+  background: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  width: 100%;
+  font-size: 14px;
   outline: none;
-  background: #ffffff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.pf-input:focus {
-  border-color: #6f7d75;
-  box-shadow: 0 0 0 1px #6f7d7522;
+
+input:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 2px #3c4d3e;
 }
-.pf-textarea {
+
+/* Reduce bigger fields */
+textarea {
   resize: vertical;
+  min-height: 70px;
 }
 
-/* Help text */
-.pf-help {
-  font-size: 0.7rem;
-  color: #6b7280;
+/* Adjust column widths */
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
 
-/* Upload */
-.pf-upload {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
+@media (min-width: 650px) {
+  .row-2 {
+    grid-template-columns: 1.2fr 0.8fr; /* ⬅ tighter on right inputs */
+  }
+}
+
+/* Image preview adjustments */
+.image-preview {
+  margin-top: 6px;
+  width: 90px;
+  height: 90px;
   border-radius: 8px;
-  border: 1px dashed #d1d5db;
-  background: #f9fafb;
-  padding: 0.5rem 0.6rem;
-}
-.pf-upload-main {
-  flex: 1;
-}
-.pf-file {
-  font-size: 0.7rem;
-}
-.pf-thumb {
-  width: 70px;
-  height: 70px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
+  background: #ffffff33;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
-.pf-thumb img {
+
+.image-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.pf-thumb-empty {
-  font-size: 0.7rem;
-  color: #9ca3af;
+
+.no-image {
+  color: #e8e8e8;
+  font-size: 10px;
+  text-align: center;
 }
 
-/* Checkbox */
-.pf-checkbox-wrap {
-  justify-content: flex-end;
-}
-.pf-checkbox-label {
-  display: inline-flex;
+/* Checkbox layout */
+.checkbox-wrap {
+  margin-top: 4px;
+  display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.8rem;
-  color: #374151;
-  margin-top: 0.5rem;
-}
-.pf-checkbox {
-  width: 15px;
-  height: 15px;
-  border-radius: 3px;
-  border: 1px solid #9ca3af;
 }
 
-/* Actions */
-.pf-actions {
+/* Buttons */
+.actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  padding-top: 0.3rem;
+  gap: 12px;
+  margin-top: 5px;
 }
-.pf-btn {
-  font-size: 0.8rem;
-  border-radius: 999px;
-  padding: 0.35rem 1rem;
-  border: 1px solid transparent;
+
+button {
   cursor: pointer;
-  transition: 0.15s ease;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: 0.2s ease;
+  border: none;
+  white-space: nowrap;
 }
-.pf-btn-primary {
-  border-color: #111827;
-  background: #111827;
-  color: #ffffff;
+
+.btn-cancel {
+  background: #976d6d;
+  color: white;
 }
-.pf-btn-primary:hover {
-  background: #000000;
+
+.btn-cancel:hover {
+  background: #b97777;
 }
-.pf-btn-ghost {
-  border-color: #d1d5db;
-  background: #ffffff;
-  color: #374151;
+
+.btn-submit {
+  background: #334334;
+  color: white;
+  font-weight: bold;
 }
-.pf-btn-ghost:hover {
-  background: #f3f4f6;
+
+.btn-submit:hover {
+  background: #1d281d;
 }
 </style>
-<style scoped>
-.product-form-card {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  padding: 1.25rem 1.5rem;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-}
 
-/* Header */
-.pf-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-.pf-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #111827;
-}
-.pf-subtitle {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.1rem;
-}
-
-/* Form */
-.pf-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* Grids */
-.pf-grid {
-  display: grid;
-  gap: 0.9rem;
-}
-.pf-grid-2 {
-  grid-template-columns: 1fr;
-}
-.pf-grid-3 {
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 768px) {
-  .pf-grid-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .pf-grid-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* Fields */
-.pf-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-.pf-label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-/* Inputs */
-.pf-input {
-  border-radius: 7px;
-  border: 1px solid #d1d5db;
-  padding: 0.4rem 0.65rem;
-  font-size: 0.85rem;
-  outline: none;
-  background: #ffffff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.pf-input:focus {
-  border-color: #6f7d75;
-  box-shadow: 0 0 0 1px #6f7d7522;
-}
-
-.pf-textarea {
-  resize: vertical;
-}
-
-/* smaller description textarea */
-.pf-textarea-small {
-  min-height: 50px;
-  max-height: 90px;
-}
-
-/* Help text */
-.pf-help {
-  font-size: 0.7rem;
-  color: #6b7280;
-}
-
-/* Upload */
-.pf-upload {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  border-radius: 8px;
-  border: 1px dashed #d1d5db;
-  background: #f9fafb;
-  padding: 0.5rem 0.6rem;
-  margin-bottom: 0.45rem;
-}
-.pf-upload-main {
-  flex: 1;
-}
-.pf-file {
-  font-size: 0.7rem;
-}
-.pf-thumb {
-  width: 70px;
-  height: 70px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.pf-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.pf-thumb-empty {
-  font-size: 0.7rem;
-  color: #9ca3af;
-}
-
-/* Right column above price */
-.pf-right-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-/* Price inline under image */
-.pf-price-inline {
-  margin-top: 0.1rem;
-}
-.pf-input-price {
-  max-width: 140px;
-}
-
-/* Checkbox */
-.pf-checkbox-wrap {
-  justify-content: flex-end;
-}
-.pf-checkbox-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.8rem;
-  color: #374151;
-  margin-top: 0.5rem;
-}
-.pf-checkbox {
-  width: 15px;
-  height: 15px;
-  border-radius: 3px;
-  border: 1px solid #9ca3af;
-}
-
-/* Actions */
-.pf-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding-top: 0.3rem;
-}
-.pf-btn {
-  font-size: 0.8rem;
-  border-radius: 999px;
-  padding: 0.35rem 1rem;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: 0.15s ease;
-}
-.pf-btn-primary {
-  border-color: #111827;
-  background: #111827;
-  color: #ffffff;
-}
-.pf-btn-primary:hover {
-  background: #000000;
-}
-.pf-btn-ghost {
-  border-color: #d1d5db;
-  background: #ffffff;
-  color: #374151;
-}
-.pf-btn-ghost:hover {
-  background: #f3f4f6;
-}
-</style>

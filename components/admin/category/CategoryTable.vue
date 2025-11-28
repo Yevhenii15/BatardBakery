@@ -13,25 +13,25 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="border border-gray-200 rounded-lg bg-white p-6">
-    <div class="flex justify-between mb-4">
-      <h2 class="text-xl font-semibold">Categories</h2>
-      <span v-if="loading" class="text-sm text-gray-500">Loading…</span>
+  <div class="table-container">
+    <div class="table-header">
+      <h2>Categories</h2>
+      <span v-if="loading" class="loading">Loading…</span>
     </div>
 
-    <div v-if="!categories.length && !loading" class="text-gray-500 text-sm">
+    <div v-if="!categories.length && !loading" class="empty-state">
       No categories found.
     </div>
 
-    <table v-else class="w-full text-sm border-separate border-spacing-y-1">
+    <table v-else>
       <thead>
-        <tr class="text-left text-gray-700">
+        <tr>
           <th>Name</th>
           <th>Weekdays</th>
           <th>Weekends</th>
           <th>Slot</th>
           <th>Lead</th>
-          <th class="text-right">Actions</th>
+          <th class="actions-col">Actions</th>
         </tr>
       </thead>
 
@@ -39,37 +39,114 @@ const emit = defineEmits<{
         <tr
           v-for="cat in categories"
           :key="cat._id"
-          class="bg-gray-50 hover:bg-gray-100 transition rounded"
         >
-          <td class="py-2 px-2">{{ cat.categoryName }}</td>
-          <td class="py-2 px-2">
-            {{ cat.weekdayTime.from }}–{{ cat.weekdayTime.to }}
-          </td>
-          <td class="py-2 px-2">
-            {{ cat.weekendsTime.from }}–{{ cat.weekendsTime.to }}
-          </td>
-          <td class="py-2 px-2">{{ cat.slotSizeMinutes }} min</td>
-          <td class="py-2 px-2">{{ cat.leadTimeMinutes }} min</td>
+          <td>{{ cat.categoryName }}</td>
+          <td>{{ cat.weekdayTime.from }}–{{ cat.weekdayTime.to }}</td>
+          <td>{{ cat.weekendsTime.from }}–{{ cat.weekendsTime.to }}</td>
+          <td>{{ cat.slotSizeMinutes }} min</td>
+          <td>{{ cat.leadTimeMinutes }} min</td>
 
-          <td class="py-2 px-2 text-right">
-            <div class="flex gap-2 justify-end">
-              <button
-                class="px-3 py-1 border border-gray-600 rounded-lg text-xs hover:bg-gray-200"
-                @click="emit('edit', cat)"
-              >
-                Edit
-              </button>
-
-              <button
-                class="px-3 py-1 border border-gray-600 rounded-lg text-xs hover:bg-gray-200"
-                @click="emit('delete', cat._id)"
-              >
-                Delete
-              </button>
-            </div>
+          <td class="text-right actions">
+            <button class="btn-edit" @click="emit('edit', cat)">Edit</button>
+            <button class="btn-delete" @click="emit('delete', cat._id)">Delete</button>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 </template>
+
+<style scoped>
+.table-container {
+  color: #ffffff;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-header h2 {
+  font-family: Georgia, serif;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 14px;
+}
+
+.loading {
+  font-size: 14px;
+  color: #ececec;
+}
+
+.empty-state {
+  font-size: 14px;
+  color: #d5d5d5;
+  padding: 15px 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+}
+
+thead th {
+  text-align: left;
+  padding: 10px;
+  font-size: 13px;
+  color: #e3e3e3;
+}
+
+tbody tr {
+  background: #7f9580;
+  transition: 0.2s;
+}
+
+tbody tr:hover {
+  background: #90a693;
+}
+
+td {
+  padding: 12px 10px;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.actions-col {
+  text-align: right;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+button {
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s ease;
+  border: none;
+}
+
+.btn-edit {
+  background: #3b4b3d;
+  color: #fff;
+}
+
+.btn-edit:hover {
+  background: #2a352b;
+}
+
+.btn-delete {
+  background: #8f5a5a;
+  color: #fff;
+}
+
+.btn-delete:hover {
+  background: #a16666;
+}
+</style>

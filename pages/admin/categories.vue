@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useCategory } from "~/composables/useCategory";
-import CategoryForm from "../../components/admin/category/CategoryForm.vue";
-import CategoryTable from "../../components/admin/category/CategoryTable.vue";
+import CategoryForm from "~/components/admin/category/CategoryForm.vue";
+import CategoryTable from "~/components/admin/category/CategoryTable.vue";
 
 const {
   categories,
@@ -19,24 +19,19 @@ const editingCategoryId = ref<string | null>(null);
 
 const handleSubmit = async (payload: any) => {
   if (editingCategoryId.value) {
-    // ✅ EDIT MODE
     const ok = await updateCategory(editingCategoryId.value, payload);
     if (ok) {
       editingCategoryId.value = null;
-      category.value = null; // << very important, clears form model
+      category.value = null;
     }
   } else {
-    // ✅ CREATE MODE
     const ok = await createCategory(payload);
-    if (ok) {
-      category.value = null; // stays in create mode, but ensure clean
-    }
+    if (ok) category.value = null;
   }
 };
 
 const handleEdit = (cat: any) => {
   editingCategoryId.value = cat._id;
-  // clone so we don't mutate table row directly
   category.value = { ...cat };
 };
 
@@ -46,7 +41,7 @@ const handleCancelEdit = () => {
 };
 
 const handleDelete = async (id: string) => {
-  if (!confirm("Are you sure you want to delete this category?")) return;
+  if (!confirm("Are you sure?")) return;
   await deleteCategory(id);
 };
 
@@ -54,32 +49,110 @@ onMounted(async () => {
   await getCategories();
 });
 </script>
+
 <template>
-  <div class="max-w-5xl mx-auto py-10 space-y-8">
-    <h1 class="text-3xl font-bold">Category Management</h1>
+  <div class="admin-wrapper">
+    <div class="admin-container">
+      <div class="back-btn-wrapper">
+        <NuxtLink to="/admin" class="back-btn">← </NuxtLink>
+      </div>  
+      <h1 class="admin-title">Category Management</h1>
+      <p class="admin-subtitle">
+        Configure pickup time rules and scheduling logic for bakery categories.
+      </p>
 
-    <p class="text-gray-600">
-      Configure pickup time rules and scheduling logic for bakery categories.
-    </p>
+      <div v-if="error" class="alert-error">{{ error }}</div>
 
-    <div
-      v-if="error"
-      class="p-3 rounded bg-gray-100 text-gray-700 text-sm border border-gray-300"
-    >
-      {{ error }}
+      <div class="admin-card">
+        <CategoryForm
+          :model-value="category"
+          @submit="handleSubmit"
+          @cancelEdit="handleCancelEdit"
+        />
+      </div>
+
+      <div class="admin-card">
+        <CategoryTable
+          :categories="categories"
+          :loading="loading"
+          @edit="handleEdit"
+          @delete="handleDelete"
+        />
+      </div>
     </div>
-
-    <CategoryForm
-      :model-value="category"
-      @submit="handleSubmit"
-      @cancelEdit="handleCancelEdit"
-    />
-
-    <CategoryTable
-      :categories="categories"
-      :loading="loading"
-      @edit="handleEdit"
-      @delete="handleDelete"
-    />
   </div>
 </template>
+
+<style scoped>
+
+.back-btn-wrapper {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  display: inline-block;
+  background: #3b4b3d;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-decoration: none;
+  transition: 0.2s ease;
+  font-weight: bold;
+}
+
+.back-btn:hover {
+  background: #283529;
+}
+
+.admin-wrapper {
+  background: #211a1a;
+  min-height: 100vh;
+  padding: 40px 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.admin-container {
+  background: #5d7261;
+  width: 90%;
+  max-width: 1100px;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0px 0px 35px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.admin-title {
+  font-size: 32px;
+  font-family: Georgia, serif;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.admin-subtitle {
+  color: #e7e7e7;
+  margin-bottom: 30px;
+  font-size: 15px;
+}
+
+.admin-card {
+  background: #6f8472;
+  padding: 25px;
+  border-radius: 14px;
+  margin-bottom: 30px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.alert-error {
+  background: #c67b7b;
+  color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+</style>

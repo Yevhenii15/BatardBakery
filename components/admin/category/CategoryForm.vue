@@ -3,7 +3,6 @@ import { computed, reactive, watch } from "vue";
 import type {
   Category,
   CategoryInput,
-  TimeRange,
 } from "~/composables/useCategory";
 
 const props = defineProps<{
@@ -17,7 +16,6 @@ const emit = defineEmits<{
 
 const isEditMode = computed(() => !!props.modelValue);
 
-// Default empty state
 const emptyState = (): CategoryInput => ({
   categoryName: "",
   weekdayTime: { from: "", to: "" },
@@ -26,23 +24,14 @@ const emptyState = (): CategoryInput => ({
   leadTimeMinutes: 0,
 });
 
-// Reactive form
 const form = reactive<CategoryInput>(emptyState());
 
-// Helper to reset form
-const resetForm = () => {
-  Object.assign(form, emptyState());
-};
+const resetForm = () => Object.assign(form, emptyState());
 
-// Watch modelValue (edit mode)
 watch(
   () => props.modelValue,
   (val) => {
-    if (!val) {
-      resetForm();
-      return;
-    }
-
+    if (!val) return resetForm();
     form.categoryName = val.categoryName;
     form.weekdayTime = { ...val.weekdayTime };
     form.weekendsTime = { ...val.weekendsTime };
@@ -54,123 +43,164 @@ watch(
 
 const onSubmit = () => {
   emit("submit", { ...form });
-  resetForm(); // <<< 🔥 CLEAR AFTER SUBMIT
+  resetForm();
 };
 
 const onCancel = () => {
-  resetForm(); // <<< 🔥 CLEAR AFTER CANCEL
+  resetForm();
   emit("cancelEdit");
 };
 </script>
 
 <template>
-  <div class="border border-gray-200 rounded-lg p-6 bg-white">
-    <h2 class="text-xl font-semibold mb-4">
+  <div class="form-container">
+    <h2 class="form-title">
       {{ isEditMode ? "Edit Category" : "Create Category" }}
     </h2>
 
-    <form @submit.prevent="onSubmit" class="space-y-6">
+    <form @submit.prevent="onSubmit" class="form-inner">
       <!-- Category Name -->
-      <div>
-        <label class="block text-sm mb-1 font-medium">Category Name</label>
-        <input
-          v-model="form.categoryName"
-          type="text"
-          class="border border-gray-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring focus:ring-gray-300"
-          required
-        />
+      <label>Category Name</label>
+      <input v-model="form.categoryName" type="text" required />
+
+      <!-- Weekday -->
+      <label>Weekday Time (Mon–Fri)</label>
+      <div class="row">
+        <input type="time" v-model="form.weekdayTime.from" required />
+        <span>to</span>
+        <input type="time" v-model="form.weekdayTime.to" required />
       </div>
 
-      <!-- Time Ranges -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label class="block text-sm mb-1 font-medium"
-            >Weekday Time (Mon–Fri)</label
-          >
-          <div class="flex gap-2">
-            <input
-              v-model="form.weekdayTime.from"
-              type="time"
-              class="border border-gray-300 rounded-lg px-3 py-2 w-full"
-              required
-            />
-            <span class="self-center text-gray-500">to</span>
-            <input
-              v-model="form.weekdayTime.to"
-              type="time"
-              class="border border-gray-300 rounded-lg px-3 py-2 w-full"
-              required
-            />
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-sm mb-1 font-medium"
-            >Weekend Time (Sat–Sun)</label
-          >
-          <div class="flex gap-2">
-            <input
-              v-model="form.weekendsTime.from"
-              type="time"
-              class="border border-gray-300 rounded-lg px-3 py-2 w-full"
-              required
-            />
-            <span class="self-center text-gray-500">to</span>
-            <input
-              v-model="form.weekendsTime.to"
-              type="time"
-              class="border border-gray-300 rounded-lg px-3 py-2 w-full"
-              required
-            />
-          </div>
-        </div>
+      <!-- Weekend -->
+      <label>Weekend Time (Sat–Sun)</label>
+      <div class="row">
+        <input type="time" v-model="form.weekendsTime.from" required />
+        <span>to</span>
+        <input type="time" v-model="form.weekendsTime.to" required />
       </div>
 
-      <!-- Slot + lead time -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label class="block text-sm mb-1 font-medium"
-            >Slot Size (minutes)</label
-          >
-          <input
-            v-model.number="form.slotSizeMinutes"
-            type="number"
-            class="border border-gray-300 rounded-lg px-3 py-2 w-full"
-            required
-          />
+      <!-- Numbers -->
+      <div class="row-2">
+        <div class="column">
+          <label>Slot Size (minutes)</label>
+          <input type="number" v-model.number="form.slotSizeMinutes" required />
         </div>
 
-        <div>
-          <label class="block text-sm mb-1 font-medium"
-            >Lead Time (minutes)</label
-          >
-          <input
-            v-model.number="form.leadTimeMinutes"
-            type="number"
-            class="border border-gray-300 rounded-lg px-3 py-2 w-full"
-            required
-          />
+        <div class="column">
+          <label>Lead Time (minutes)</label>
+          <input type="number" v-model.number="form.leadTimeMinutes" required />
         </div>
       </div>
 
       <!-- Buttons -->
-      <div class="flex justify-end gap-3">
-        <button
-          v-if="isEditMode"
-          type="button"
-          class="border border-gray-400 px-4 py-2 rounded-lg text-sm hover:bg-gray-100"
-          @click="onCancel"
-        >
+      <div class="actions">
+        <button v-if="isEditMode" type="button" class="btn-cancel" @click="onCancel">
           Cancel
         </button>
-
-        <button
-          type="submit"
-          class="border border-gray-800 px-4 py-2 rounded-lg text-sm hover:bg-gray-900 hover:text-white transition"
-        >
+        <button type="submit" class="btn-submit">
           {{ isEditMode ? "Save Changes" : "Create Category" }}
         </button>
       </div>
     </form>
   </div>
 </template>
+
+<style scoped>
+.form-container {
+  width: 100%;
+  color: #ffffff;
+}
+
+.form-title {
+  font-family: Georgia, serif;
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.form-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+label {
+  color: #e8e8e8;
+  font-size: 15px;
+  margin-bottom: -2px;
+}
+
+input {
+  background: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  width: 100%;
+  font-size: 14px;
+  outline: none;
+}
+
+input:focus {
+  box-shadow: 0 0 0 2px #3c4d3e;
+}
+
+.row {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.row span {
+  color: #d3d3d3;
+  width: 40px;
+  font-size: 18px;
+}
+
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+button {
+  cursor: pointer;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: 0.2s ease;
+  border: none;
+}
+
+.btn-cancel {
+  background: #976d6d;
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: #b97777;
+}
+
+.btn-submit {
+  background: #334334;
+  color: white;
+  font-weight: bold;
+}
+
+.btn-submit:hover {
+  background: #1d281d;
+}
+</style>

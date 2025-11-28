@@ -5,82 +5,173 @@ import { useAuth } from "~/composables/useAuth";
 const router = useRouter();
 const { logout } = useAuth();
 
-const goTo = (path: string) => {
-  router.push(path);
-};
+const goTo = (path: string) => router.push(path);
 
 const onLogout = async () => {
   await logout();
-  router.push("/"); // or "/admin/login" if you have a login page there
+  router.push("/");
 };
 </script>
 
 <template>
-  <div class="space-y-8">
-    <!-- Header -->
-    <header class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-semibold">Admin panel</h1>
-        <p class="text-sm text-gray-500 mt-1">
-          Manage content, products, categories and bookings for Batard Bakery.
-        </p>
-      </div>
+  <div class="admin-bg">
 
-      <button
-        type="button"
-        class="px-4 py-2 border border-gray-800 rounded-lg text-sm hover:bg-gray-900 hover:text-white transition"
-        @click="onLogout"
-      >
-        Logout
-      </button>
-    </header>
-
-    <!-- Grid of cards -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Categories -->
-      <button
-        type="button"
-        class="text-left border border-gray-200 rounded-xl bg-white shadow-sm p-5 hover:shadow-md hover:bg-gray-50 transition flex flex-col justify-between"
-        @click="goTo('/admin/categories')"
-      >
+    <div class="admin-window">
+      <!-- Header -->
+      <header class="header">
         <div>
-          <h2 class="text-lg font-semibold">Categories</h2>
-          <p class="mt-1 text-xs text-gray-500">
-            Manage product categories and their pickup time rules.
+          <h1 class="title">Admin Panel</h1>
+          <p class="subtitle">
+            Manage content, products, categories and bookings.
           </p>
         </div>
-        <span class="mt-4 text-xs text-gray-600"> Go to categories → </span>
-      </button>
 
-      <!-- Products -->
-      <button
-        type="button"
-        class="text-left border border-gray-200 rounded-xl bg-white shadow-sm p-5 hover:shadow-md hover:bg-gray-50 transition flex flex-col justify-between"
-        @click="goTo('/admin/products')"
-      >
-        <div>
-          <h2 class="text-lg font-semibold">Products</h2>
-          <p class="mt-1 text-xs text-gray-500">
-            Create and edit products, prices, stock and images.
-          </p>
-        </div>
-        <span class="mt-4 text-xs text-gray-600"> Go to products → </span>
-      </button>
+        <button class="logout-btn" @click="onLogout">Logout</button>
+      </header>
 
-      <!-- Bookings -->
-      <button
-        type="button"
-        class="text-left border border-gray-200 rounded-xl bg-white shadow-sm p-5 hover:shadow-md hover:bg-gray-50 transition flex flex-col justify-between"
-        @click="goTo('/admin/bookings')"
-      >
-        <div>
-          <h2 class="text-lg font-semibold">Bookings</h2>
-          <p class="mt-1 text-xs text-gray-500">
-            View active and archived bookings, update status or delete.
-          </p>
+      <!-- GRID OF ACTIONS -->
+      <section class="grid">
+        <div class="card" @click="goTo('/admin/categories')">
+          <h2 class="card-title">Categories</h2>
+          <p class="card-desc">Manage product categories and pickup rules.</p>
+          <span class="card-link">Go to categories →</span>
         </div>
-        <span class="mt-4 text-xs text-gray-600"> Go to bookings → </span>
-      </button>
-    </section>
+
+        <div class="card" @click="goTo('/admin/products')">
+          <h2 class="card-title">Products</h2>
+          <p class="card-desc">Create and edit products, prices and images.</p>
+          <span class="card-link">Go to products →</span>
+        </div>
+
+        <div class="card" @click="goTo('/admin/bookings')">
+          <h2 class="card-title">Bookings</h2>
+          <p class="card-desc">View and update customer bookings.</p>
+          <span class="card-link">Go to bookings →</span>
+        </div>
+
+        <div class="card" @click="goTo('/admin/')">
+          <h2 class="card-title">Contact Info</h2>
+          <p class="card-desc">Edit opening hours, address and phone.</p>
+          <span class="card-link">Go to contact →</span>
+        </div>
+
+        <div class="card" @click="goTo('/admin/')">
+          <h2 class="card-title">Add later....</h2>
+          <p class="card-desc">Store configuration and internal options.</p>
+          <span class="card-link">Go to settings →</span>
+        </div>
+
+        <div class="card" @click="goTo('/admin/')">
+          <h2 class="card-title">Add later....</h2>
+          <p class="card-desc">Manage admin accounts and permissions.</p>
+          <span class="card-link">Go to users →</span>
+        </div>
+      </section>
+    </div>
+
   </div>
 </template>
+
+<style scoped>
+/* Full background */
+.admin-bg {
+  background: #211a1a;
+  min-height: 85vh;
+  display: flex;
+  justify-content: center;
+  padding: 4rem 0;
+}
+
+/* Centered window */
+.admin-window {
+  width: 1100px;
+  height: 100%;
+  background: #5d7261;
+  padding: 3rem;
+  border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  color: white;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+}
+
+.title {
+  font-size: 2.3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.subtitle {
+  margin-top: 0.3rem;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+
+/* Logout button */
+.logout-btn {
+  background: transparent;
+  border: 2px solid white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.logout-btn:hover {
+  background: white;
+  color: #5d7261;
+}
+
+/* Grid layout — 2 rows × 3 columns */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+/* Cards */
+.card {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 2rem;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  transition: 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  height: 130px;
+}
+
+.card:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+
+.card-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+
+.card-desc {
+  font-size: 0.9rem;
+  opacity: 0.95;
+  line-height: 1.4;
+  flex-grow: 1;
+}
+
+.card-link {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+</style>

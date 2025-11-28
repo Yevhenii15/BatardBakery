@@ -75,18 +75,20 @@ defineEmits<{
   padding: 1.5rem;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
   border: 1px solid #e5e7eb;
+  margin-bottom: 20px;
 }
 
 /* Header */
 .bt-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
 }
 
 .bt-title {
   font-size: 1.2rem;
   font-weight: 600;
+  text-align: center;
 }
 
 .bt-subtitle {

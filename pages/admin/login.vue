@@ -13,60 +13,161 @@ const form = ref({
 
 const onSubmit = async () => {
   const success = await login(form.value.email, form.value.password);
-  if (success) {
-    router.push("/admin"); // only after clicking login
-  }
+  if (success) router.push("/admin");
 };
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-    <div
-      class="w-full max-w-sm bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-5"
-    >
-      <h1 class="text-xl font-semibold text-gray-800 text-center">
-        Admin Login
-      </h1>
+  <div class="admin-bg">
+    <div class="login-window">
+      <!-- Logo Placeholder -->
+      <div class="logo-container">
+        <!-- Replace with your <img> -->
+        <div class="logo-placeholder"><img src="/public/img/logo.png" alt=""></div>
+      </div>
+      <h1 class="title">Welcome, Admin!</h1>
 
-      <form @submit.prevent="onSubmit" class="space-y-4">
+      <form @submit.prevent="onSubmit" class="form">
         <!-- Email -->
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">Email</label>
-          <input
-            v-model="form.email"
-            type="email"
-            required
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-gray-300"
-            placeholder="admin@example.com"
-          />
-        </div>
+        <label class="label">Email</label>
+        <input
+          v-model="form.email"
+          type="email"
+          required
+          class="input"
+          placeholder="admin@example.com"
+        />
 
         <!-- Password -->
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">Password</label>
-          <input
-            v-model="form.password"
-            type="password"
-            required
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-gray-300"
-            placeholder="••••••••"
-          />
-        </div>
+        <label class="label">Password</label>
+        <input
+          v-model="form.password"
+          type="password"
+          required
+          class="input"
+          placeholder="••••••••"
+        />
 
-        <!-- Error message -->
-        <p v-if="error" class="text-sm text-red-600 text-center">
-          {{ error }}
-        </p>
+        <!-- Error -->
+        <p v-if="error" class="error">{{ error }}</p>
 
-        <!-- Submit -->
-        <button
-          type="submit"
-          :disabled="loading"
-          class="w-full py-2 text-center border border-gray-800 rounded-lg text-sm hover:bg-gray-900 hover:text-white transition disabled:opacity-50"
-        >
+        <!-- Button -->
+        <button type="submit" :disabled="loading" class="btn">
           {{ loading ? "Logging in..." : "Login" }}
         </button>
       </form>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Fullscreen background */
+.admin-bg {
+  background: #211a1a;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Main login box */
+.login-window {
+  width: 360px;
+  background: #5d7261; /* the pine green */
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0px 6px 25px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* Logo container */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.logo-placeholder {
+  width: 300px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  font-weight: bold;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Title */
+.title {
+  text-align: center;
+  color: white;
+  font-size: 1.8rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+/* Labels */
+.label {
+  color: #e8e8e8;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+/* Inputs */
+.input {
+  width: 92%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #ffffff;
+  color: #333;
+  margin-bottom: 1rem;
+  outline: none;
+  transition: 0.2s;
+}
+
+.input:focus {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+/* Error */
+.error {
+  color: #ffe0e0;
+  background: rgba(255, 0, 0, 0.25);
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-align: center;
+  margin-top: -0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Button */
+.btn {
+  width: 100%;
+  padding: 12px;
+  background: #ffffff;
+  color: #5d7261;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.btn:hover {
+  background: #e4e4e4;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+</style>

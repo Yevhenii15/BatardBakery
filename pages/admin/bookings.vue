@@ -1,9 +1,13 @@
 <template>
-  <div class="space-y-10">
+  <div class="admin-wrapper">
     <!-- Page Title -->
-    <div class="mb-4">
-      <h1 class="text-2xl font-semibold text-gray-900">All bookings</h1>
-      <p class="text-sm text-gray-500">
+    <div class="admin-container">
+      <div class="back-btn-wrapper">
+        <NuxtLink to="/admin" class="back-btn">← </NuxtLink>
+      </div>
+      <!-- Header -->
+      <h1 class="admin-title">All bookings</h1>
+      <p class="admin-subtitle">
         Search, manage, and update customer bookings
       </p>
     </div>
@@ -164,3 +168,76 @@ const removeBooking = async (id: string) => {
   }
 };
 </script>
+
+<style scoped>
+.back-btn-wrapper {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  display: inline-block;
+  background: #3b4b3d;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-decoration: none;
+  transition: 0.2s ease;
+  font-weight: bold;
+}
+
+.back-btn:hover {
+  background: #283529;
+}
+
+.admin-wrapper {
+  background: #211a1a;
+  min-height: 100vh;
+  padding: 40px 0;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.admin-container {
+  width: 100%;
+  padding: 40px;
+  text-align: center;
+}
+
+.admin-title {
+  font-size: 32px;
+  font-family: Georgia, serif;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 10px;
+  margin-right: 60px;
+}
+
+.admin-subtitle {
+  color: #e7e7e7;
+  margin-bottom: 30px;
+  margin-right: 60px;
+  font-size: 15px;
+}
+
+
+.admin-card {
+  background: #6f8472;
+  padding: 25px;
+  border-radius: 14px;
+  margin-bottom: 30px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.alert-error {
+  background: #c67b7b;
+  color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+</style>
