@@ -3,8 +3,8 @@ import { ref } from "vue";
 import { useApiClient } from "./useApiClient";
 
 export interface Company {
-  ShortDescription: string;
-  FullDescription: string;
+  shortDescription: string;
+  description: string;
 }
 
 const company = ref<Company | null>(null);
@@ -36,8 +36,9 @@ export function useCompany() {
       // protected PUT /api/company (admin only, cookie-based auth)
       company.value = await api<Company>("/api/company", {
         method: "PUT",
-        body: data,
+        body: data, // 👈 { shortDescription, description }
       });
+      alert("Company information updated successfully.");
       return true;
     } catch (err: any) {
       error.value =

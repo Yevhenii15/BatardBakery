@@ -48,16 +48,16 @@ const onLogout = async () => {
           <span class="card-link">Go to bookings →</span>
         </div>
 
-        <div class="card" @click="goTo('/admin/')">
+        <div class="card" @click="goTo('/admin/contact-info')">
           <h2 class="card-title">Contact Info</h2>
           <p class="card-desc">Edit opening hours, address and phone.</p>
           <span class="card-link">Go to contact →</span>
         </div>
 
-        <div class="card" @click="goTo('/admin/')">
-          <h2 class="card-title">Add later....</h2>
-          <p class="card-desc">Store configuration and internal options.</p>
-          <span class="card-link">Go to settings →</span>
+        <div class="card" @click="goTo('/admin/company')">
+          <h2 class="card-title">Company</h2>
+          <p class="card-desc">Edit company details</p>
+          <span class="card-link">Go to company →</span>
         </div>
 
         <div class="card" @click="goTo('/admin/')">

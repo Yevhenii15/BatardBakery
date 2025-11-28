@@ -3,10 +3,10 @@ import { ref } from "vue";
 import { useApiClient } from "./useApiClient";
 
 export interface HeroSection {
-  Title: string;
-  Subtitle: string;
-  ImagePrimary: string;
-  ImageSecondary: string;
+  title: string;
+  subTitle: string;
+  heroImg1: string;
+  heroImg2: string;
 }
 
 const hero = ref<HeroSection | null>(null);
@@ -21,7 +21,7 @@ export function useHero() {
     error.value = null;
 
     try {
-      // Public GET /api/hero
+      // backend returns: { title, subTitle, heroImg1, heroImg2, ... }
       hero.value = await api<HeroSection>("/api/hero");
     } catch (err: any) {
       error.value = err?.statusMessage || "Failed to fetch hero section";
@@ -35,11 +35,13 @@ export function useHero() {
     error.value = null;
 
     try {
-      // Protected PUT /api/hero
-      hero.value = await api<HeroSection>("/api/hero", {
+      // send same shape back
+      const updated = await api<HeroSection>("/api/hero", {
         method: "PUT",
         body: data,
       });
+
+      hero.value = updated;
       return true;
     } catch (err: any) {
       error.value =

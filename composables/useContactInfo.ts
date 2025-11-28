@@ -3,12 +3,12 @@ import { ref } from "vue";
 import { useApiClient } from "./useApiClient";
 
 export interface ContactInfo {
-  Email: string;
-  Phone: string;
-  Address: string;
-  OpeningHours: string;
-  Cvr: string;
-  LogoUrl: string;
+  email: string;
+  phone: string;
+  address: string;
+  openingHours: string;
+  cvr: string;
+  logo: string;
 }
 
 const contactInfo = ref<ContactInfo | null>(null);
@@ -23,7 +23,6 @@ export function useContactInfo() {
     error.value = null;
 
     try {
-      // Public GET /api/contact-info
       contactInfo.value = await api<ContactInfo>("/api/contact-info");
     } catch (err: any) {
       error.value = err?.statusMessage || "Failed to fetch contact information";
@@ -37,11 +36,12 @@ export function useContactInfo() {
     error.value = null;
 
     try {
-      // Protected PUT /api/contact-info
-      contactInfo.value = await api<ContactInfo>("/api/contact-info", {
+      const updated = await api<ContactInfo>("/api/contact-info", {
         method: "PUT",
         body: data,
       });
+
+      contactInfo.value = updated;
       return true;
     } catch (err: any) {
       error.value =

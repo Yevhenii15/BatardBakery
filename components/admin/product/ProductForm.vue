@@ -2,7 +2,7 @@
 import { reactive, watch, computed, ref } from "vue";
 import type { Product, ProductInput } from "~/composables/useProduct";
 import type { Category } from "~/composables/useCategory";
-import { useApiClient } from "~/composables/useApiClient";
+import { useImageUpload } from "~/composables/useImageUpload";
 
 const props = defineProps<{
   modelValue: Product | null;
@@ -34,16 +34,24 @@ const form = reactive<ProductInput>(createEmptyForm());
 const selectedFile = ref<File | null>(null);
 const previewUrl = ref<string | null>(null);
 
+// shared image upload composable
+const { uploadImage } = useImageUpload();
+
 const resetForm = () => {
   Object.assign(form, createEmptyForm());
   selectedFile.value = null;
   previewUrl.value = null;
 };
 
+// sync when editing / switching product
 watch(
   () => props.modelValue,
   (val) => {
-    if (!val) return resetForm();
+    if (!val) {
+      resetForm();
+      return;
+    }
+
     Object.assign(form, val);
     previewUrl.value = val.photo || null;
     selectedFile.value = null;
@@ -51,30 +59,24 @@ watch(
   { immediate: true }
 );
 
-const api = useApiClient();
-
 const onSubmit = async () => {
   const payload: ProductInput = { ...form };
 
   if (selectedFile.value) {
-    const formData = new FormData();
-    formData.append("file", selectedFile.value);
-    if (form.photo) formData.append("oldUrl", form.photo);
-
     try {
-      const res = await api<{ url: string }>("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      payload.photo = res.url;
+      const url = await uploadImage(
+        selectedFile.value,
+        form.photo || undefined
+      );
+      payload.photo = url;
     } catch (err) {
       alert("Failed to upload image.");
       return;
     }
   }
 
+  // let parent decide what to do (create/update + clearing state)
   emit("submit", payload);
-  resetForm();
 };
 
 const onCancel = () => {
@@ -88,6 +90,10 @@ const onFileChange = (e: Event) => {
   if (!file) return;
   selectedFile.value = file;
   previewUrl.value = URL.createObjectURL(file);
+};
+
+const toggleCollapsed = () => {
+  collapsed.value = !collapsed.value;
 };
 </script>
 
