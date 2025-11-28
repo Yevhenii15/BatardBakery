@@ -36,10 +36,7 @@ const emit = defineEmits<{
       </thead>
 
       <tbody>
-        <tr
-          v-for="cat in categories"
-          :key="cat._id"
-        >
+        <tr v-for="cat in categories" :key="cat._id">
           <td>{{ cat.categoryName }}</td>
           <td>{{ cat.weekdayTime.from }}–{{ cat.weekdayTime.to }}</td>
           <td>{{ cat.weekendsTime.from }}–{{ cat.weekendsTime.to }}</td>
@@ -48,7 +45,9 @@ const emit = defineEmits<{
 
           <td class="text-right actions">
             <button class="btn-edit" @click="emit('edit', cat)">Edit</button>
-            <button class="btn-delete" @click="emit('delete', cat._id)">Delete</button>
+            <button class="btn-delete" @click="emit('delete', cat._id)">
+              Delete
+            </button>
           </td>
         </tr>
       </tbody>
@@ -58,9 +57,15 @@ const emit = defineEmits<{
 
 <style scoped>
 .table-container {
-  color: #ffffff;
+  color: #333;
+  background: #ffffff;
+  padding: 1.6rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
 }
 
+/* Header */
 .table-header {
   display: flex;
   justify-content: space-between;
@@ -71,48 +76,56 @@ const emit = defineEmits<{
   font-family: Georgia, serif;
   font-size: 20px;
   font-weight: bold;
-  margin-bottom: 14px;
+  color: #2c2c2c;
 }
 
 .loading {
   font-size: 14px;
-  color: #ececec;
+  color: #666;
 }
 
 .empty-state {
   font-size: 14px;
-  color: #d5d5d5;
+  color: #777;
   padding: 15px 0;
 }
 
+/* Table base */
 table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0 6px;
+  border-spacing: 0 8px;
 }
 
+/* Header row */
 thead th {
   text-align: left;
-  padding: 10px;
+  padding: 10px 8px;
   font-size: 13px;
-  color: #e3e3e3;
+  color: #555;
+  font-weight: 600;
+  border-bottom: 1px solid #ddd;
 }
 
+/* Rows */
 tbody tr {
-  background: #7f9580;
-  transition: 0.2s;
+  background: #f7f7f7;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: 0.2s ease;
 }
 
 tbody tr:hover {
-  background: #90a693;
+  background: #eeeeee;
 }
 
 td {
   padding: 12px 10px;
   font-size: 14px;
-  color: #ffffff;
+  color: #333;
 }
 
+/* Actions column */
 .actions-col {
   text-align: right;
 }
@@ -123,6 +136,7 @@ td {
   justify-content: flex-end;
 }
 
+/* Buttons */
 button {
   padding: 8px 12px;
   border-radius: 6px;
@@ -132,21 +146,23 @@ button {
   border: none;
 }
 
+/* Edit button */
 .btn-edit {
-  background: #3b4b3d;
+  background: #5d7261; /* green theme */
   color: #fff;
 }
 
 .btn-edit:hover {
-  background: #2a352b;
+  background: #46574a;
 }
 
+/* Delete button */
 .btn-delete {
-  background: #8f5a5a;
+  background: #c94f4f;
   color: #fff;
 }
 
 .btn-delete:hover {
-  background: #a16666;
+  background: #a93f3f;
 }
 </style>

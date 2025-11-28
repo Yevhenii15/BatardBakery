@@ -20,33 +20,37 @@ const onSubmit = async () => {
 <template>
   <div class="admin-bg">
     <div class="login-window">
-      <!-- Logo Placeholder -->
+      <!-- Logo -->
       <div class="logo-container">
-        <!-- Replace with your <img> -->
-        <div class="logo-placeholder"><img src="/public/img/logo.png" alt=""></div>
+        <img src="/img/logo.png" alt="Batard logo" class="logo-img" />
       </div>
+
       <h1 class="title">Welcome, Admin!</h1>
 
       <form @submit.prevent="onSubmit" class="form">
         <!-- Email -->
-        <label class="label">Email</label>
-        <input
-          v-model="form.email"
-          type="email"
-          required
-          class="input"
-          placeholder="admin@example.com"
-        />
+        <div class="field">
+          <label class="label">Email</label>
+          <input
+            v-model="form.email"
+            type="email"
+            required
+            class="input"
+            placeholder="admin@example.com"
+          />
+        </div>
 
         <!-- Password -->
-        <label class="label">Password</label>
-        <input
-          v-model="form.password"
-          type="password"
-          required
-          class="input"
-          placeholder="••••••••"
-        />
+        <div class="field">
+          <label class="label">Password</label>
+          <input
+            v-model="form.password"
+            type="password"
+            required
+            class="input"
+            placeholder="••••••••"
+          />
+        </div>
 
         <!-- Error -->
         <p v-if="error" class="error">{{ error }}</p>
@@ -63,20 +67,24 @@ const onSubmit = async () => {
 <style scoped>
 /* Fullscreen background */
 .admin-bg {
-  background: #211a1a;
   min-height: 100vh;
+  margin: 0;
+  padding: 1.5rem;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: #211a1a;
+  box-sizing: border-box;
 }
 
 /* Main login box */
 .login-window {
-  width: 360px;
-  background: #5d7261; /* the pine green */
-  padding: 2.5rem;
-  border-radius: 16px;
-  box-shadow: 0px 6px 25px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  max-width: 380px;
+  background: #5d7261;
+  padding: 2.5rem 2.25rem 2.3rem;
+  border-radius: 18px;
+  box-shadow: 0px 14px 35px rgba(0, 0, 0, 0.55);
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
@@ -87,29 +95,36 @@ const onSubmit = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
-.logo-placeholder {
-  width: 300px;
-  height: 100px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #fff;
-  font-weight: bold;
-  font-size: 0.85rem;
-  text-align: center;
+.logo-img {
+  max-width: 260px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 /* Title */
 .title {
   text-align: center;
-  color: white;
-  font-size: 1.8rem;
-  font-weight: bold;
-  letter-spacing: 1px;
-  margin-bottom: 0.5rem;
+  color: #ffffff;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.4rem;
+}
+
+/* Form layout */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
 }
 
 /* Labels */
@@ -121,20 +136,25 @@ const onSubmit = async () => {
 
 /* Inputs */
 .input {
-  width: 92%;
-  padding: 12px 14px;
+  width: 100%;
+  padding: 11px 13px;
   border: none;
   border-radius: 8px;
   font-size: 0.95rem;
   background: #ffffff;
   color: #333;
-  margin-bottom: 1rem;
   outline: none;
-  transition: 0.2s;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+  box-sizing: border-box;
+}
+
+.input::placeholder {
+  color: #a0a0a0;
 }
 
 .input:focus {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75);
+  transform: translateY(-1px);
 }
 
 /* Error */
@@ -144,30 +164,44 @@ const onSubmit = async () => {
   padding: 6px 10px;
   border-radius: 6px;
   text-align: center;
-  margin-top: -0.5rem;
   font-size: 0.85rem;
 }
 
 /* Button */
 .btn {
+  margin-top: 0.5rem;
   width: 100%;
   padding: 12px;
   background: #ffffff;
   color: #5d7261;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: 0.25s ease;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
 
-.btn:hover {
-  background: #e4e4e4;
+.btn:hover:not(:disabled) {
+  background: #f1f1f1;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
 }
 
 .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Small screens */
+@media (max-width: 480px) {
+  .login-window {
+    padding: 2rem 1.5rem 2rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
 }
 </style>

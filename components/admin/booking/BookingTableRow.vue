@@ -151,11 +151,11 @@ const saveEdit = () => {
     <!-- Timestamps -->
     <td class="cell">
       <div class="ts-block">
-        <span class="ts-label">Created</span>
+        <span class="ts-label">Created </span>
         <span>{{ new Date(props.booking.createdAt).toLocaleString() }}</span>
       </div>
       <div class="ts-block">
-        <span class="ts-label">Updated</span>
+        <span class="ts-label">Updated </span>
         <span>{{ new Date(props.booking.updatedAt).toLocaleString() }}</span>
       </div>
     </td>

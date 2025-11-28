@@ -16,6 +16,9 @@ const emit = defineEmits<{
 
 const isEditMode = computed(() => !!props.modelValue);
 
+// 🔽 collapsible state
+const collapsed = ref(false);
+
 const createEmptyForm = (): ProductInput => ({
   name: "",
   description: "",
@@ -90,56 +93,96 @@ const onFileChange = (e: Event) => {
 
 <template>
   <div class="form-container">
-    <h2 class="form-title">{{ isEditMode ? "Edit Product" : "Create Product" }}</h2>
+    <!-- Header with collapse toggle -->
+    <header class="form-header">
+      <h2 class="form-title">
+        {{ isEditMode ? "Edit Product" : "Create Product" }}
+      </h2>
 
-    <form class="form-inner" @submit.prevent="onSubmit">
-      
-      <!-- Name -->
-      <label>Product Name</label>
-      <input v-model="form.name" type="text" required />
+      <button
+        type="button"
+        class="collapse-btn"
+        @click="collapsed = !collapsed"
+      >
+        <span>{{ collapsed ? "Show" : "Hide" }}</span>
+        <span
+          class="collapse-icon"
+          :class="{ 'collapse-icon--collapsed': collapsed }"
+        >
+          ▾
+        </span>
+      </button>
+    </header>
 
-      <!-- Category -->
-      <label>Category</label>
-      <select v-model="form.categoryId" required>
-        <option disabled value="">Select a category</option>
-        <option v-for="cat in categories" :key="cat._id" :value="cat._id">
-          {{ cat.categoryName }}
-        </option>
-      </select>
+    <!-- Collapsible body -->
+    <form v-if="!collapsed" class="form-inner" @submit.prevent="onSubmit">
+      <!-- ==== TWO-COLUMN GRID ==== -->
+      <div class="form-grid">
+        <!-- LEFT COLUMN -->
+        <div class="col-left">
+          <div class="field">
+            <label>Product Name</label>
+            <input v-model="form.name" type="text" required />
+          </div>
 
-      <!-- Description -->
-      <label>Description</label>
-      <textarea v-model="form.description" rows="3" placeholder="Product description" />
+          <div class="field">
+            <label>Category</label>
+            <select v-model="form.categoryId" required>
+              <option disabled value="">Select a category</option>
+              <option v-for="cat in categories" :key="cat._id" :value="cat._id">
+                {{ cat.categoryName }}
+              </option>
+            </select>
+          </div>
 
-      <!-- Image + Price -->
-      <div class="row-2">
-        <div class="column">
-          <label>Product Image</label>
-          <input type="file" accept="image/*" @change="onFileChange" />
+          <div class="field field-image">
+            <label>Product Image</label>
+            <input type="file" accept="image/*" @change="onFileChange" />
 
-          <div class="image-preview">
-            <img v-if="previewUrl" :src="previewUrl" alt="Preview" />
-            <img v-else-if="form.photo" :src="form.photo" alt="Preview" />
-            <div v-else class="no-image">No image</div>
+            <div class="image-preview">
+              <img v-if="previewUrl" :src="previewUrl" alt="Preview" />
+              <img v-else-if="form.photo" :src="form.photo" alt="Preview" />
+              <div v-else class="no-image">No image</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Stock</label>
+            <input v-model.number="form.stock" type="number" min="0" required />
           </div>
         </div>
 
-        <div class="column">
-          <label>Price (DKK)</label>
-          <input v-model.number="form.price" type="number" min="0" step="0.5" required />
-        </div>
-      </div>
+        <!-- RIGHT COLUMN -->
+        <div class="col-right">
+          <div class="field field-description">
+            <label>Description</label>
+            <textarea
+              v-model="form.description"
+              rows="4"
+              placeholder="Product description"
+            />
+          </div>
 
-      <!-- Stock + Daily Capacity -->
-      <div class="row-2">
-        <div class="column">
-          <label>Stock</label>
-          <input v-model.number="form.stock" type="number" min="0" required />
-        </div>
+          <div class="field">
+            <label>Price (DKK)</label>
+            <input
+              v-model.number="form.price"
+              type="number"
+              min="0"
+              step="0.5"
+              required
+            />
+          </div>
 
-        <div class="column">
-          <label>Daily Capacity</label>
-          <input v-model.number="form.dailyCapacity" type="number" min="0" required />
+          <div class="field">
+            <label>Daily Capacity</label>
+            <input
+              v-model.number="form.dailyCapacity"
+              type="number"
+              min="0"
+              required
+            />
+          </div>
         </div>
       </div>
 
@@ -153,7 +196,14 @@ const onFileChange = (e: Event) => {
 
       <!-- Actions -->
       <div class="actions">
-        <button v-if="isEditMode" type="button" class="btn-cancel" @click="onCancel">Cancel</button>
+        <button
+          v-if="isEditMode"
+          type="button"
+          class="btn-cancel"
+          @click="onCancel"
+        >
+          Cancel
+        </button>
         <button type="submit" class="btn-submit">
           {{ isEditMode ? "Save Changes" : "Create Product" }}
         </button>
@@ -163,13 +213,22 @@ const onFileChange = (e: Event) => {
 </template>
 
 <style scoped>
+/* Main container: full width of parent */
 .form-container {
-  margin: 20px auto; /* center */
-  background: #5d7261;
-  padding: 2rem;
+  margin: 20px 0;
+  background: #ffffff;
+  padding: 1.6rem 2rem;
   border-radius: 16px;
-  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.4);
-  color: white;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.15);
+  color: #333;
+}
+
+/* Header with title + collapse button */
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
 }
 
 /* Title */
@@ -177,69 +236,129 @@ const onFileChange = (e: Event) => {
   font-family: Georgia, serif;
   font-size: 22px;
   font-weight: bold;
-  margin-bottom: 1.4rem;
-  text-align: center; /* nicer layout */
+  text-align: left;
+  color: #2c2c2c;
+}
+
+/* Collapse button – same vibe as booking table */
+.collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #d4d4d4;
+  background: #f9fafb;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: #374151;
+}
+
+.collapse-btn:hover {
+  background: #f3f4f6;
+}
+
+.collapse-icon {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.collapse-icon--collapsed {
+  transform: rotate(180deg);
 }
 
 /* Layout */
 .form-inner {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
+}
+
+/* === GRID for left/right === */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* equal columns */
+  gap: 1.5rem;
+}
+
+.col-left,
+.col-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Stack on small screens */
+@media (max-width: 720px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Fields */
+.field {
+  display: flex;
+  flex-direction: column;
 }
 
 /* Labels */
 label {
-  color: #e8e8e8;
-  font-size: 15px;
+  color: #333;
+  font-size: 14px;
   margin-bottom: 4px;
+  font-weight: 500;
 }
 
 /* Inputs */
 input,
-select,
 textarea {
-  background: #ffffff;
-  border: none;
+  background: #f4f4f4;
+  border: 1px solid #dcdcdc;
   border-radius: 6px;
-  padding: 10px;
-  width: 100%;
+  padding: 8px 10px;
+  width: 95%; /* full width inside column */
   font-size: 14px;
   outline: none;
+  color: #333;
+}
+select {
+  background: #f4f4f4;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  padding: 8px 10px;
+  width: 100%; /* full width inside column */
+  font-size: 14px;
+  outline: none;
+  color: #333;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  box-shadow: 0 0 0 2px #3c4d3e;
+  border-color: #5d7261;
+  box-shadow: 0 0 0 2px #5d726155;
 }
 
-/* Reduce bigger fields */
-textarea {
+/* Description a bit taller so it visually matches left side height */
+.field-description textarea {
+  min-height: 150px;
   resize: vertical;
-  min-height: 70px;
 }
 
-/* Adjust column widths */
-.row-2 {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
+/* Image field */
+.field-image input[type="file"] {
+  margin-bottom: 6px;
 }
 
-@media (min-width: 650px) {
-  .row-2 {
-    grid-template-columns: 1.2fr 0.8fr; /* ⬅ tighter on right inputs */
-  }
-}
-
-/* Image preview adjustments */
+/* Image preview */
 .image-preview {
-  margin-top: 6px;
-  width: 90px;
-  height: 90px;
+  margin-top: 2px;
+  width: 110px;
+  height: 110px;
   border-radius: 8px;
-  background: #ffffff33;
+  background: #eaeaea;
+  border: 1px solid #dcdcdc;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -253,29 +372,36 @@ textarea {
 }
 
 .no-image {
-  color: #e8e8e8;
-  font-size: 10px;
+  color: #666;
+  font-size: 11px;
   text-align: center;
 }
 
-/* Checkbox layout */
+/* Checkbox */
 .checkbox-wrap {
-  margin-top: 4px;
+  margin-top: 6px;
   display: flex;
   align-items: center;
+}
+
+.checkbox-wrap label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #333;
 }
 
 /* Buttons */
 .actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 5px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 button {
   cursor: pointer;
-  padding: 10px 18px;
+  padding: 9px 18px;
   border-radius: 8px;
   font-size: 14px;
   transition: 0.2s ease;
@@ -283,23 +409,24 @@ button {
   white-space: nowrap;
 }
 
+/* Cancel button */
 .btn-cancel {
-  background: #976d6d;
+  background: #c94f4f;
   color: white;
 }
 
 .btn-cancel:hover {
-  background: #b97777;
+  background: #a93f3f;
 }
 
+/* Submit button */
 .btn-submit {
-  background: #334334;
+  background: #5d7261;
   color: white;
   font-weight: bold;
 }
 
 .btn-submit:hover {
-  background: #1d281d;
+  background: #46574a;
 }
 </style>
-

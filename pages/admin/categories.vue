@@ -55,7 +55,7 @@ onMounted(async () => {
     <div class="admin-container">
       <div class="back-btn-wrapper">
         <NuxtLink to="/admin" class="back-btn">← </NuxtLink>
-      </div>  
+      </div>
       <h1 class="admin-title">Category Management</h1>
       <p class="admin-subtitle">
         Configure pickup time rules and scheduling logic for bakery categories.
@@ -84,7 +84,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-
 .back-btn-wrapper {
   text-align: left;
   margin-bottom: 20px;
@@ -137,14 +136,6 @@ onMounted(async () => {
   color: #e7e7e7;
   margin-bottom: 30px;
   font-size: 15px;
-}
-
-.admin-card {
-  background: #6f8472;
-  padding: 25px;
-  border-radius: 14px;
-  margin-bottom: 30px;
-  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.25);
 }
 
 .alert-error {

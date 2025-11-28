@@ -1,39 +1,47 @@
 <template>
   <div class="admin-wrapper">
-    <!-- Page Title -->
     <div class="admin-container">
+      <!-- Back button -->
       <div class="back-btn-wrapper">
         <NuxtLink to="/admin" class="back-btn">← </NuxtLink>
       </div>
+
       <!-- Header -->
       <h1 class="admin-title">All bookings</h1>
-      <p class="admin-subtitle">
-        Search, manage, and update customer bookings
-      </p>
+      <p class="admin-subtitle">Search, manage, and update customer bookings</p>
+
+      <!-- Error -->
+      <div v-if="error" class="alert-error">{{ error }}</div>
+
+      <!-- Search card -->
+      <div class="admin-card">
+        <BookingSearch @search="searchBooking" @reset="reloadBookings" />
+      </div>
+
+      <!-- Active bookings -->
+      <div class="admin-card">
+        <BookingTable
+          title="Active bookings"
+          subtitle="Pending and confirmed bookings"
+          :items="activeBookings"
+          :loading="loading"
+          @updateBooking="handleUpdateBooking"
+          @delete="removeBooking"
+        />
+      </div>
+
+      <!-- Archived bookings -->
+      <div class="admin-card">
+        <BookingTable
+          title="Archived bookings"
+          subtitle="Completed or cancelled bookings"
+          :items="archivedBookings"
+          :loading="loadingArchived"
+          @updateBooking="handleUpdateBooking"
+          @delete="removeBooking"
+        />
+      </div>
     </div>
-
-    <!-- Search -->
-    <BookingSearch @search="searchBooking" @reset="reloadBookings" />
-
-    <!-- Active bookings -->
-    <BookingTable
-      title="Active bookings"
-      subtitle="Pending and confirmed bookings"
-      :items="activeBookings"
-      :loading="loading"
-      @updateBooking="handleUpdateBooking"
-      @delete="removeBooking"
-    />
-
-    <!-- Archived bookings -->
-    <BookingTable
-      title="Archived bookings"
-      subtitle="Completed or cancelled bookings"
-      :items="archivedBookings"
-      :loading="loadingArchived"
-      @updateBooking="handleUpdateBooking"
-      @delete="removeBooking"
-    />
   </div>
 </template>
 
@@ -49,6 +57,7 @@ const {
   bookings,
   booking,
   loading,
+  error,
   getBookings,
   getBookingById,
   getBookingByNumber,
@@ -66,6 +75,7 @@ const activeBookings = computed(() =>
 const archivedBookings = computed(() =>
   bookings.value.filter((b) => b.archived)
 );
+
 const reloadBookings = async () => {
   await getBookings(false);
   loadingArchived.value = true;
@@ -80,39 +90,28 @@ onMounted(async () => {
   loadingArchived.value = false;
 });
 
-// search by ID (from BookingSearch)
+// search by ID or booking number
 const searchBooking = async (value: string) => {
   const trimmed = value.trim();
 
-  // If input empty -> reload full lists
   if (!trimmed) {
-    await getBookings(false); // active
-    loadingArchived.value = true;
-    await getBookings(true); // archived
-    loadingArchived.value = false;
+    await reloadBookings();
     return;
   }
 
   let found: any = null;
 
-  // 1) If it looks like a Mongo ObjectId, try by ID first
   const isObjectId = /^[0-9a-fA-F]{24}$/.test(trimmed);
   if (isObjectId) {
     const byId = await getBookingById(trimmed);
-    if (byId) {
-      found = byId;
-    }
+    if (byId) found = byId;
   }
 
-  // 2) If not found yet, try by booking number
   if (!found) {
     const byNumber = await getBookingByNumber(trimmed);
-    if (byNumber) {
-      found = byNumber;
-    }
+    if (byNumber) found = byNumber;
   }
 
-  // 3) Update table or show "not found"
   if (found) {
     bookings.value = [found];
   } else {
@@ -121,7 +120,7 @@ const searchBooking = async (value: string) => {
   }
 };
 
-// 🔥 called when inline edit in table is saved
+// update booking (status / archived)
 const handleUpdateBooking = async (payload: {
   id: string;
   status: string;
@@ -129,40 +128,32 @@ const handleUpdateBooking = async (payload: {
 }) => {
   let archived = payload.archived;
 
-  // auto-archive completed / cancelled
   if (payload.status === "completed" || payload.status === "cancelled") {
     archived = true;
   }
 
-  // 1) Update in backend
   await updateBooking(payload.id, {
     status: payload.status as any,
     archived,
   });
 
-  // 2) Update local reactive state so UI changes immediately
-
-  // update in main bookings list
   bookings.value = bookings.value.map((b) =>
     b._id === payload.id ? { ...b, status: payload.status as any, archived } : b
   );
 
-  // also keep single `booking` (from search) in sync
   if (booking.value && booking.value._id === payload.id) {
     booking.value.status = payload.status as any;
     booking.value.archived = archived;
   }
 };
 
-// delete booking (both from search result & tables)
+// delete booking
 const removeBooking = async (id: string) => {
   if (!confirm("Delete this booking?")) return;
   await deleteBooking(id);
 
-  // remove from local list so UI updates without reload
   bookings.value = bookings.value.filter((b) => b._id !== id);
 
-  // clear search result if it was this booking
   if (booking.value && booking.value._id === id) {
     booking.value = null;
   }
@@ -191,47 +182,43 @@ const removeBooking = async (id: string) => {
   background: #283529;
 }
 
+/* Outer dark background, same as reference */
 .admin-wrapper {
   background: #211a1a;
   min-height: 100vh;
   padding: 40px 0;
-  margin: 0 auto;
   display: flex;
-  flex-direction: column;
   justify-content: center;
+  align-items: flex-start;
 }
 
+/* Green main container, centered */
 .admin-container {
-  width: 100%;
+  background: #5d7261;
+  width: 90%;
+  max-width: 1100px;
   padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0px 0px 35px rgba(0, 0, 0, 0.45);
   text-align: center;
 }
 
+/* Header */
 .admin-title {
   font-size: 32px;
   font-family: Georgia, serif;
   font-weight: bold;
   color: #ffffff;
   margin-bottom: 10px;
-  margin-right: 60px;
 }
 
 .admin-subtitle {
   color: #e7e7e7;
   margin-bottom: 30px;
-  margin-right: 60px;
   font-size: 15px;
 }
 
-
-.admin-card {
-  background: #6f8472;
-  padding: 25px;
-  border-radius: 14px;
-  margin-bottom: 30px;
-  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.25);
-}
-
+/* Error */
 .alert-error {
   background: #c67b7b;
   color: #fff;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { Product } from "~/composables/useProduct";
 import type { Category } from "~/composables/useCategory";
 
@@ -27,6 +27,15 @@ const sections = computed(() =>
     }))
     .filter((section) => section.items.length > 0)
 );
+
+// 🔽 collapsed state per category
+const collapsedMap = ref<Record<string, boolean>>({});
+
+const isCollapsed = (id: string) => !!collapsedMap.value[id];
+
+const toggleSection = (id: string) => {
+  collapsedMap.value[id] = !collapsedMap.value[id];
+};
 </script>
 
 <template>
@@ -57,20 +66,40 @@ const sections = computed(() =>
         :key="section.category._id"
         class="pg-category-block"
       >
-        <!-- Category title -->
+        <!-- Category title + collapse -->
         <header class="pg-category-header">
-          <h3 class="pg-category-title">
-            {{ section.category.categoryName }}
-          </h3>
-          <p class="pg-category-subtitle">
-            {{ section.items.length }} product{{
-              section.items.length > 1 ? "s" : ""
-            }}
-          </p>
+          <div>
+            <h3 class="pg-category-title">
+              {{ section.category.categoryName }}
+            </h3>
+            <p class="pg-category-subtitle">
+              {{ section.items.length }} product{{
+                section.items.length > 1 ? "s" : ""
+              }}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="collapse-btn"
+            @click="toggleSection(section.category._id)"
+          >
+            <span>
+              {{ isCollapsed(section.category._id) ? "Show" : "Hide" }}
+            </span>
+            <span
+              class="collapse-icon"
+              :class="{
+                'collapse-icon--collapsed': isCollapsed(section.category._id),
+              }"
+            >
+              ▾
+            </span>
+          </button>
         </header>
 
         <!-- Grid of cards for this category -->
-        <div class="pg-grid">
+        <div v-if="!isCollapsed(section.category._id)" class="pg-grid">
           <div
             v-for="p in section.items"
             :key="p._id"
@@ -193,10 +222,11 @@ const sections = computed(() =>
   padding-top: 1rem;
 }
 
+/* Category header + collapse */
 .pg-category-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   margin-bottom: 0.75rem;
 }
 
@@ -209,6 +239,33 @@ const sections = computed(() =>
 .pg-category-subtitle {
   font-size: 0.75rem;
   color: #6b7280;
+}
+
+/* Collapse button (same style family as other admin buttons) */
+.collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #d4d4d4;
+  background: #f9fafb;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: #374151;
+}
+
+.collapse-btn:hover {
+  background: #f3f4f6;
+}
+
+.collapse-icon {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.collapse-icon--collapsed {
+  transform: rotate(180deg);
 }
 
 /* Grid of cards */

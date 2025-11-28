@@ -15,7 +15,6 @@ const onLogout = async () => {
 
 <template>
   <div class="admin-bg">
-
     <div class="admin-window">
       <!-- Header -->
       <header class="header">
@@ -68,11 +67,13 @@ const onLogout = async () => {
         </div>
       </section>
     </div>
-
   </div>
 </template>
 
 <style scoped>
+body {
+  margin: 0;
+}
 /* Full background */
 .admin-bg {
   background: #211a1a;
@@ -143,7 +144,7 @@ const onLogout = async () => {
   padding: 2rem;
   border-radius: 14px;
   cursor: pointer;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
   transition: 0.25s ease;
   display: flex;
   flex-direction: column;
@@ -153,7 +154,7 @@ const onLogout = async () => {
 .card:hover {
   background: rgba(255, 255, 255, 0.22);
   transform: translateY(-4px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 .card-title {
