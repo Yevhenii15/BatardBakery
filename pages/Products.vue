@@ -45,7 +45,13 @@
             v-for="item in section.items"
             :key="item._id"
             class="product-card"
+            :class="{ 'sold-out': remainingForProduct(item) <= 0 }"
           >
+            <!-- OUT OF STOCK badge -->
+            <div v-if="remainingForProduct(item) <= 0" class="sold-out-badge">
+              OUT OF STOCK
+            </div>
+
             <div class="product-image">
               <img
                 :src="item.photo || '/img/placeholder.jpg'"
@@ -153,7 +159,8 @@ const {
   getProducts,
 } = useProduct();
 
-const { addItem } = useCart();
+// 👇 now also using cart items (same as product detail page)
+const { addItem, items } = useCart();
 
 const loading = computed(
   () => categoriesLoading.value || productsLoading.value
@@ -179,8 +186,7 @@ const sections = computed(() =>
 const activeQtyProductId = ref<string | null>(null);
 const qty = ref(1);
 
-// 🔹 How many pieces user already added (only tracked on this page)
-const addedQtyByProduct = ref<Record<string, number>>({});
+// ---- Limits & cart-aware remaining ----
 
 // Base max per order from product data only
 const maxPerOrder = (p: any) => {
@@ -190,10 +196,23 @@ const maxPerOrder = (p: any) => {
   return max === Infinity ? 99 : max;
 };
 
-// Remaining pieces user can still add for this product on this page
+// How many of that product are already in cart (global cart)
+const alreadyInCart = (p: any) => {
+  if (!items?.value) return 0;
+  const id = p._id;
+
+  return items.value.reduce((sum: number, item: any) => {
+    const itemProductId =
+      item.product?._id || item.productId || item._id || item.id;
+    const q = item.quantity ?? item.qty ?? 0;
+    return itemProductId === id ? sum + q : sum;
+  }, 0);
+};
+
+// Remaining pieces user can still add for this product
 const remainingForProduct = (p: any) => {
   const baseMax = maxPerOrder(p);
-  const used = addedQtyByProduct.value[p._id] ?? 0;
+  const used = alreadyInCart(p);
   const remaining = baseMax - used;
   return remaining > 0 ? remaining : 0;
 };
@@ -201,7 +220,7 @@ const remainingForProduct = (p: any) => {
 // when clicking "Add to cart"
 const openQtySelector = (product: any) => {
   const remaining = remainingForProduct(product);
-  if (remaining <= 0) return; // fully used for now
+  if (remaining <= 0) return; // fully used
 
   activeQtyProductId.value = product._id;
   qty.value = 1;
@@ -216,11 +235,7 @@ const confirmAddToCart = (product: any) => {
 
   addItem(product, qty.value);
 
-  // 🔹 remember how many pieces we already added for this product
-  const id = product._id;
-  const prev = addedQtyByProduct.value[id] ?? 0;
-  addedQtyByProduct.value[id] = prev + qty.value;
-
+  // after adding, cart updates; remainingForProduct will recompute automatically
   activeQtyProductId.value = null; // hide selector
 };
 
@@ -234,10 +249,11 @@ onMounted(async () => {
   position: relative;
   top: 80px;
 }
+
 /* ===== BACK BUTTON ===== */
 .back-btn {
   position: fixed;
-  top: 100px; /* below navbar (which is ~70–80px high) */
+  top: 100px; /* below navbar */
   left: 25px;
   width: 48px;
   height: 48px;
@@ -249,7 +265,7 @@ onMounted(async () => {
   align-items: center;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1100; /* higher than navbar’s 1000 */
+  z-index: 1100;
   transition: 0.25s ease;
 }
 
@@ -276,7 +292,7 @@ onMounted(async () => {
 .order-title {
   font-size: 5rem;
   letter-spacing: 4px;
-  color: #6f7d75; /* same green/grey as Batard */
+  color: #6f7d75;
   font-weight: 700;
   margin: 0;
   font-family: "Tungsten", "Arial Narrow", sans-serif;
@@ -332,11 +348,39 @@ onMounted(async () => {
 
 /* Card */
 .product-card {
+  position: relative;
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
   text-align: center;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* ✅ ONLY overlay the card, no opacity on the card itself */
+.product-card.sold-out::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25); /* dark transparent layer */
+  pointer-events: none;
+  z-index: 1; /* above content, below badge */
+}
+
+/* ✅ Badge stays FULLY visible */
+.sold-out-badge {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 2; /* above overlay */
+  background: #b91c1c;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* Placeholder image box */
@@ -372,7 +416,7 @@ onMounted(async () => {
 
 .product-actions {
   display: flex;
-  gap: 12px; /* space between buttons */
+  gap: 12px;
   justify-content: center;
   margin-top: 12px;
 }
@@ -387,7 +431,7 @@ onMounted(async () => {
   cursor: pointer;
   transition: 0.25s ease;
   text-decoration: none;
-  display: inline-flex; /* important! */
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
@@ -396,6 +440,15 @@ onMounted(async () => {
   background: #4f5c55;
   transform: scale(1.05);
 }
+
+/* Disabled button */
+.product-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Qty selector */
 .qty-wrapper {
   display: flex;
   align-items: center;

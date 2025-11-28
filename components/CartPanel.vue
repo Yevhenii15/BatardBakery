@@ -5,11 +5,27 @@ import { useCartPanel } from "~/composables/useCartPanel";
 const { items, totalPrice, setQuantity, removeItem, clearCart } = useCart();
 const { close } = useCartPanel();
 
+// --- capacity helpers ---
+const maxPerOrder = (item: any) => {
+  const cap =
+    typeof item.dailyCapacity === "number" ? item.dailyCapacity : Infinity;
+  const stock = typeof item.stock === "number" ? item.stock : Infinity;
+  return Math.min(cap, stock);
+};
+
+const isAtLimit = (item: any) => {
+  const max = maxPerOrder(item);
+  if (!Number.isFinite(max)) return false; // no limit, never at limit
+  return item.quantity >= max;
+};
+
+// --- quantity controls ---
 const decrease = (item: any) => {
   setQuantity(item.productId, item.quantity - 1);
 };
 
 const increase = (item: any) => {
+  if (isAtLimit(item)) return; // block if already at limit
   setQuantity(item.productId, item.quantity + 1);
 };
 </script>
@@ -61,15 +77,28 @@ const increase = (item: any) => {
 
                 <div class="qty-row">
                   <div class="qty-controls">
-                    <button @click="decrease(item)">−</button>
+                    <button type="button" @click="decrease(item)">−</button>
                     <span>{{ item.quantity }}</span>
-                    <button @click="increase(item)">+</button>
+                    <button
+                      type="button"
+                      @click="increase(item)"
+                      :disabled="isAtLimit(item)"
+                      :class="{ 'qty-plus-disabled': isAtLimit(item) }"
+                    >
+                      +
+                    </button>
                   </div>
 
                   <p class="subtotal">
                     {{ (item.price * item.quantity).toFixed(2) }} DKK
                   </p>
                 </div>
+
+                <!-- note when limit reached -->
+                <p v-if="isAtLimit(item)" class="capacity-note">
+                  No more of this product available for today. Please contact us
+                  if you need more.
+                </p>
               </div>
 
               <button class="remove-btn" @click="removeItem(item.productId)">
@@ -230,10 +259,33 @@ const increase = (item: any) => {
   border: none;
   background: #6f7d75;
   color: white;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* 🔥 Disabled/limit style for + button */
+.qty-controls button.qty-plus-disabled,
+.qty-controls button:disabled {
+  background: #b3b3b3;
+  color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.qty-controls span {
+  min-width: 20px;
+  text-align: center;
+  font-size: 0.95rem;
 }
 
 .subtotal {
   font-weight: 600;
+}
+
+/* note when capacity reached */
+.capacity-note {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #b91c1c;
 }
 
 .remove-btn {

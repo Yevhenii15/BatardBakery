@@ -9,11 +9,15 @@ export interface CartItem {
   price: number;
   quantity: number;
   categoryId: string;
+
+  // 🔥 needed so cart can enforce limits
+  dailyCapacity?: number;
+  stock?: number;
 }
 
 const STORAGE_KEY = "batard_cart";
 
-// shared state (like your other composables)
+// shared state
 const items = ref<CartItem[]>([]);
 const initialized = ref(false);
 
@@ -56,17 +60,37 @@ export function useCart() {
     items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
   );
 
+  // 🔥 helper: calculate max allowed for a product
+  const calcMaxForProduct = (product: Product | CartItem) => {
+    const cap =
+      typeof (product as any).dailyCapacity === "number"
+        ? (product as any).dailyCapacity
+        : Infinity;
+    const stock =
+      typeof (product as any).stock === "number"
+        ? (product as any).stock
+        : Infinity;
+    return Math.min(cap, stock);
+  };
+
   const addItem = (product: Product, quantity = 1) => {
     const existing = items.value.find((i) => i.productId === product._id);
 
-    // basic stock guard if you want
-    const maxStock =
-      typeof product.stock === "number" ? product.stock : Infinity;
+    const max = calcMaxForProduct(product);
 
     if (existing) {
-      existing.quantity = Math.min(existing.quantity + quantity, maxStock);
+      // ensure we also store limits on existing items
+      if (existing.dailyCapacity === undefined) {
+        existing.dailyCapacity = product.dailyCapacity;
+      }
+      if (existing.stock === undefined) {
+        existing.stock = product.stock;
+      }
+
+      const newQty = Math.min(existing.quantity + quantity, max);
+      existing.quantity = newQty;
     } else {
-      const qty = Math.min(quantity, maxStock);
+      const qty = Math.min(quantity, max);
       items.value.push({
         productId: product._id,
         name: product.name,
@@ -74,6 +98,8 @@ export function useCart() {
         price: product.price,
         quantity: qty,
         categoryId: product.categoryId,
+        dailyCapacity: product.dailyCapacity,
+        stock: product.stock,
       });
     }
 
@@ -84,11 +110,16 @@ export function useCart() {
   const setQuantity = (productId: string, quantity: number) => {
     const item = items.value.find((i) => i.productId === productId);
     if (!item) return;
-    if (quantity <= 0) {
+
+    const max = calcMaxForProduct(item);
+    const safeQty = Math.min(quantity, max);
+
+    if (safeQty <= 0) {
       items.value = items.value.filter((i) => i.productId !== productId);
     } else {
-      item.quantity = quantity;
+      item.quantity = safeQty;
     }
+
     saveToStorage();
   };
 

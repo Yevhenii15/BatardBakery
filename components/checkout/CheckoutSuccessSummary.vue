@@ -4,6 +4,13 @@ import type { Booking } from "~/composables/useBooking";
 const props = defineProps<{
   booking: Booking;
 }>();
+
+// 🔹 Force full reload when going back to products
+const goBackToProducts = () => {
+  if (import.meta.client) {
+    window.location.href = "/products";
+  }
+};
 </script>
 
 <template>
@@ -130,9 +137,10 @@ const props = defineProps<{
       </section>
     </div>
 
-    <NuxtLink to="/products" class="primary-btn mt-4">
+    <!-- 🔹 Now a button that reloads the page -->
+    <button class="primary-btn mt-4" @click="goBackToProducts">
       Back to products
-    </NuxtLink>
+    </button>
   </div>
 </template>
 

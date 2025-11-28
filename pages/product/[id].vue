@@ -1,5 +1,6 @@
 <template>
   <Navbar />
+
   <!-- BACK BUTTON -->
   <button class="back-btn" @click="router.back()">
     <svg viewBox="0 0 24 24" class="arrow-icon">
@@ -35,9 +36,79 @@
 
         <p class="price">{{ product.price.toFixed(2) }} DKK</p>
 
-        <button class="add-to-cart-btn" type="button" @click="handleAddToCart">
-          Add to cart
-        </button>
+        <!-- Availability info -->
+        <p class="availability" v-if="maxPerOrder > 0">
+          Available today:
+          <strong>{{ remaining }}</strong>
+          / {{ maxPerOrder }}
+        </p>
+        <p class="availability sold" v-else>Out of stock for today</p>
+
+        <!-- ACTIONS: Add to cart with quantity selector -->
+        <div class="actions">
+          <!-- Completely blocked -->
+          <template v-if="remaining <= 0">
+            <button class="add-to-cart-btn" type="button" disabled>
+              Out of stock for today
+            </button>
+          </template>
+
+          <!-- We still have some left -->
+          <template v-else>
+            <!-- Initial state: just button -->
+            <button
+              v-if="!showSelector"
+              class="add-to-cart-btn"
+              type="button"
+              @click="openSelector"
+            >
+              Add to cart
+            </button>
+
+            <!-- After click: selector + confirm -->
+            <div v-else class="qty-row">
+              <button
+                type="button"
+                class="qty-btn"
+                @click="qty > 1 && (qty = qty - 1)"
+              >
+                −
+              </button>
+
+              <input
+                v-model.number="qty"
+                type="number"
+                class="qty-input"
+                :min="1"
+                :max="remaining"
+              />
+
+              <button
+                type="button"
+                class="qty-btn"
+                @click="qty < remaining && (qty = qty + 1)"
+              >
+                +
+              </button>
+
+              <button
+                type="button"
+                class="add-to-cart-btn confirm"
+                @click="confirmAddToCart"
+              >
+                Add {{ qty }} pcs
+              </button>
+
+              <button
+                type="button"
+                class="cancel-link"
+                @click="showSelector = false"
+              >
+                Cancel
+              </button>
+            </div>
+          </template>
+        </div>
       </div>
 
       <div class="image-box">
@@ -57,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useProduct } from "~/composables/useProduct";
 import { useCart } from "~/composables/useCart";
@@ -67,8 +138,9 @@ const route = useRoute();
 const router = useRouter();
 
 const { product, loading, error, getProductById } = useProduct();
-const { addItem } = useCart();
+const { addItem, items } = useCart(); // 👈 assuming items is exposed from cart
 
+// ===== Load product =====
 onMounted(async () => {
   const id = route.params.id as string;
   if (id) {
@@ -76,10 +148,66 @@ onMounted(async () => {
   }
 });
 
-const handleAddToCart = () => {
-  if (product.value) {
-    addItem(product.value, 1);
-  }
+// ===== Quantity + limits =====
+const qty = ref(1);
+const showSelector = ref(false);
+
+// Base max allowed by product fields (dailyCapacity + stock)
+const maxPerOrder = computed(() => {
+  if (!product.value) return 0;
+  const p: any = product.value;
+
+  const cap =
+    typeof p.dailyCapacity === "number"
+      ? p.dailyCapacity
+      : Number.POSITIVE_INFINITY;
+  const stock =
+    typeof p.stock === "number" ? p.stock : Number.POSITIVE_INFINITY;
+
+  const max = Math.min(cap, stock);
+  return max === Number.POSITIVE_INFINITY ? 99 : max; // fallback
+});
+
+// How many of this product are already in cart
+const alreadyInCart = computed(() => {
+  if (!product.value) return 0;
+  const id = (product.value as any)._id;
+
+  if (!items?.value) return 0;
+
+  // adjust this depending on cart item structure
+  return items.value.reduce((sum: number, item: any) => {
+    const itemProductId =
+      item.product?._id || item.productId || item._id || item.id;
+    const itemQty = item.quantity ?? item.qty ?? 0;
+    return itemProductId === id ? sum + itemQty : sum;
+  }, 0);
+});
+
+// Remaining we can still add
+const remaining = computed(() => {
+  const rem = maxPerOrder.value - alreadyInCart.value;
+  return rem > 0 ? rem : 0;
+});
+
+// Open selector
+const openSelector = () => {
+  if (!product.value) return;
+  if (remaining.value <= 0) return;
+  qty.value = 1;
+  showSelector.value = true;
+};
+
+// Confirm add to cart
+const confirmAddToCart = () => {
+  if (!product.value) return;
+  if (remaining.value <= 0) return;
+
+  if (qty.value > remaining.value) qty.value = remaining.value;
+  if (qty.value <= 0) return;
+
+  addItem(product.value, qty.value);
+  showSelector.value = false;
 };
 </script>
 
@@ -170,8 +298,27 @@ const handleAddToCart = () => {
   color: #1d2a3a;
 }
 
-.add-to-cart-btn {
+/* Availability text */
+.availability {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+.availability strong {
+  font-weight: 700;
+}
+
+.availability.sold {
+  color: #b91c1c;
+}
+
+/* Actions */
+.actions {
   margin-top: 1.5rem;
+}
+
+.add-to-cart-btn {
   padding: 0.8rem 1.8rem;
   border-radius: 6px;
   border: none;
@@ -185,6 +332,57 @@ const handleAddToCart = () => {
 .add-to-cart-btn:hover {
   background: #4f5c55;
   transform: scale(1.03);
+}
+
+/* Disabled */
+.add-to-cart-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Qty row */
+.qty-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.qty-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #6f7d75;
+  background: #fff;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-input {
+  width: 60px;
+  text-align: center;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  padding: 4px 6px;
+}
+
+.add-to-cart-btn.confirm {
+  padding-inline: 1.4rem;
+}
+
+.cancel-link {
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .loading-text,

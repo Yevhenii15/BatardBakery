@@ -3,7 +3,7 @@
 
   <main class="checkout-page">
     <!-- Back button -->
-    <button class="back-btn" @click="$router.push('/products')">
+    <button class="back-btn" @click="goBack">
       <svg viewBox="0 0 24 24" class="arrow-icon">
         <path
           d="M15 18l-6-6 6-6"
@@ -82,16 +82,16 @@ import PickupGroupsForm from "../components/checkout/PickupGroupsForm.vue";
 import OrderSummary from "../components/checkout/OrderSummary.vue";
 import CheckoutSuccessSummary from "~/components/checkout/CheckoutSuccessSummary.vue";
 
-const { items, totalPrice, clearCart } = useCart();
+const { items, totalPrice, clearCart, setQuantity, removeItem } = useCart();
 const { categories, getCategories, loading: categoriesLoading } = useCategory();
 const {
   createBooking,
   loading: bookingLoading,
   error: bookingError,
   booking,
+  checkCapacity, // 👈 capacity check
 } = useBooking();
 
-// 🔹 now also get pickupDate
 const { today, pickupDate, pickupGroups, timeSlots, rebuildPickupGroups } =
   useCheckoutPickup(items, categories);
 
@@ -113,8 +113,11 @@ onMounted(async () => {
   await getCategories();
   rebuildPickupGroups();
 });
-
-// ✅ Submit handler
+const goBack = () => {
+  if (import.meta.client) {
+    window.location.href = "/products";
+  }
+};
 const handleSubmit = async () => {
   formError.value = null;
 
@@ -133,13 +136,11 @@ const handleSubmit = async () => {
     return;
   }
 
-  // 🔹 ensure one global date is selected
   if (!pickupDate.value) {
     formError.value = "Please select a pickup date.";
     return;
   }
 
-  // 🔹 ensure EVERY group has a time
   for (const group of pickupGroups.value) {
     if (!group.timeSlot) {
       formError.value = "Please select time for all pickup groups.";
@@ -147,11 +148,62 @@ const handleSubmit = async () => {
     }
   }
 
-  // Build pickups array – all share the same date
+  // ============================
+  // 🔥 CHECK CAPACITY FOR THE DAY
+  // ============================
+  const capacityResult = await checkCapacity(pickupDate.value, items.value);
+  const byProduct = capacityResult?.byProduct || {};
+
+  let adjusted = false;
+  const messages: string[] = [];
+
+  for (const item of [...items.value]) {
+    const info = byProduct[item.productId];
+    if (!info) continue;
+
+    const remaining = info.remaining;
+
+    if (item.quantity > remaining) {
+      adjusted = true;
+
+      if (remaining <= 0) {
+        // nothing left → remove from cart
+        removeItem(item.productId);
+        messages.push(`${item.name}: no items left for ${pickupDate.value}.`);
+      } else {
+        // clamp to remaining
+        const old = item.quantity;
+        setQuantity(item.productId, remaining);
+        messages.push(
+          `${item.name}: reduced from ${old} to ${remaining} for ${pickupDate.value}.`
+        );
+      }
+    }
+  }
+
+  if (adjusted) {
+    // ❗ Do NOT rebuild pickup groups, so timeSlot & date stay as chosen.
+    alert(
+      `Sorry, we only have a limited amount left for the selected date.\n\n` +
+        messages.join("\n") +
+        `\n\nIf you need more, please contact us.`
+    );
+
+    // 👇 STOP HERE – let the user review the updated cart & submit again
+    if (!items.value.length) {
+      formError.value =
+        "Your cart is now empty because there was no remaining capacity for the selected date.";
+    }
+    return;
+  }
+
+  // ============================
+  // Build payload & create booking
+  // ============================
   const pickups: BookingPickupInput[] = pickupGroups.value.map((group) => ({
     categoryId: group.categoryIds[0] ?? "",
-    date: pickupDate.value, // 🔹 shared date
-    timeSlot: group.timeSlot,
+    date: pickupDate.value!, // shared date
+    timeSlot: group.timeSlot, // already selected
     orderNotes: group.orderNotes || "",
   }));
 

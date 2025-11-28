@@ -191,7 +191,38 @@ export function useBooking() {
       loading.value = false;
     }
   };
+  // composables/useBooking.ts (snippet)
+  const checkCapacity = async (date: string, cartItems: any[]) => {
+    if (!date || !cartItems.length) {
+      return { ok: false, byProduct: {} as Record<string, any> };
+    }
 
+    const { data, error } = await useFetch("/api/booking/check-capacity", {
+      method: "POST",
+      body: {
+        date,
+        items: cartItems.map((i) => ({ productId: i.productId })),
+      },
+    });
+
+    if (error.value) {
+      console.error("checkCapacity error", error.value);
+      return { ok: false, byProduct: {} as Record<string, any> };
+    }
+
+    return data.value as {
+      ok: boolean;
+      byProduct: Record<
+        string,
+        {
+          capacity: number;
+          stock: number;
+          alreadyBooked: number;
+          remaining: number;
+        }
+      >;
+    };
+  };
   return {
     bookings,
     booking,
@@ -204,5 +235,6 @@ export function useBooking() {
     getBookingByNumber,
     updateBooking,
     deleteBooking,
+    checkCapacity,
   };
 }
